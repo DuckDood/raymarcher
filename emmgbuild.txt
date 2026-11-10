@@ -3,17 +3,26 @@ dir build
 
 compiler ${CC}
 
-srcflag -Iglad/include
-buildflag -lSDL3
-buildflag -lGL
 
-# Put src here
-src main.c
+srcflag -Iglad/include
 
 srcdir glad/src
 src glad.c
 
-# Put build here
+srcdir src
+
+
+buildflag -lSDL3
+buildflag -lGL
+
+srcflag -std=c23
+srcflag -Wall -Wextra -Werror
+
+check src/main.vert
+check src/main.frag
+
+src main.c
+
 build raymarcher
 
 embedmake
