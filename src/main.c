@@ -62,9 +62,9 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 	}
 
 	GLfloat tri_vertices[6] = {
-		-1, -1,
-		1, -1,
-		0, 1
+		-5, -5,
+		5, -5,
+		0, 5
 	};
 
 	glGenVertexArrays(1, &st->screen_tri_vao);
@@ -177,6 +177,8 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	glUseProgram(st->raymarch_prog);
+	glUniform2f(glGetUniformLocation(st->raymarch_prog, "resolution"), WIDTH, HEIGHT);
+
 	glBindVertexArray(st->screen_tri_vao);
 
 	glDrawArrays(GL_TRIANGLES, 0, 3);
