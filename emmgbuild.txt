@@ -1,0 +1,24 @@
+dir obj
+dir build
+
+compiler ${CC}
+
+srcflag -Iglad/include
+buildflag -lSDL3
+buildflag -lGL
+
+# Put src here
+src main.c
+
+srcdir glad/src
+src glad.c
+
+# Put build here
+build raymarcher
+
+embedmake
+clean:
+	rm -r obj
+	rm -r build
+.PHONY: clean
+endmake
