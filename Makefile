@@ -1,4 +1,4 @@
-all: obj/ build/ obj/glad.c.o obj/main.c.o build/raymarcher 
+all: obj/ build/ obj/glad.c.o obj/main.c.o obj/vectors.c.o build/raymarcher 
 OSMODE := l
 
 obj/: 
@@ -25,17 +25,25 @@ endif
 
 obj/main.c.o: src/main.c src/main.vert src/main.frag 
 ifeq (${OSMODE}, l)
-	${CC} src/main.c -c -o obj/main.c.o -Iglad/include -std=c23 -Wall -Wextra -Werror
+	${CC} src/main.c -c -o obj/main.c.o -Iglad/include -Iinclude -std=c23 -Wall -Wextra -Werror
 else
-	${CC} src/main.c -c -o obj/main.c.o -Iglad/include -std=c23 -Wall -Wextra -Werror
+	${CC} src/main.c -c -o obj/main.c.o -Iglad/include -Iinclude -std=c23 -Wall -Wextra -Werror
 endif
 
 
-build/raymarcher: obj/glad.c.o obj/main.c.o src/main.vert src/main.frag 
+obj/vectors.c.o: src/vectors.c src/main.vert src/main.frag 
 ifeq (${OSMODE}, l)
-	${CXX} obj/glad.c.o obj/main.c.o -o build/raymarcher -lSDL3 -lGL
+	${CC} src/vectors.c -c -o obj/vectors.c.o -Iglad/include -Iinclude -std=c23 -Wall -Wextra -Werror
 else
-	${CXX} obj/glad.c.o obj/main.c.o -o build/raymarcher -lSDL3 -lGL
+	${CC} src/vectors.c -c -o obj/vectors.c.o -Iglad/include -Iinclude -std=c23 -Wall -Wextra -Werror
+endif
+
+
+build/raymarcher: obj/glad.c.o obj/main.c.o obj/vectors.c.o src/main.vert src/main.frag 
+ifeq (${OSMODE}, l)
+	${CXX} obj/glad.c.o obj/main.c.o obj/vectors.c.o -o build/raymarcher -lSDL3 -lGL
+else
+	${CXX} obj/glad.c.o obj/main.c.o obj/vectors.c.o -o build/raymarcher -lSDL3 -lGL
 endif
 
 
@@ -53,9 +61,14 @@ else
 	clang glad/src/glad.c  -Iglad/include -MJ emmgtemp/0.json -fsyntax-only
 endif
 ifeq (${OSMODE}, l)
-	clang src/main.c  -Iglad/include -std=c23 -Wall -Wextra -Werror -MJ emmgtemp/1.json -fsyntax-only
+	clang src/main.c  -Iglad/include -Iinclude -std=c23 -Wall -Wextra -Werror -MJ emmgtemp/1.json -fsyntax-only
 else
-	clang src/main.c  -Iglad/include -std=c23 -Wall -Wextra -Werror -MJ emmgtemp/1.json -fsyntax-only
+	clang src/main.c  -Iglad/include -Iinclude -std=c23 -Wall -Wextra -Werror -MJ emmgtemp/1.json -fsyntax-only
+endif
+ifeq (${OSMODE}, l)
+	clang src/vectors.c  -Iglad/include -Iinclude -std=c23 -Wall -Wextra -Werror -MJ emmgtemp/2.json -fsyntax-only
+else
+	clang src/vectors.c  -Iglad/include -Iinclude -std=c23 -Wall -Wextra -Werror -MJ emmgtemp/2.json -fsyntax-only
 endif
 # not cross platform here sad i think
 	echo [ > emmgtemp/[

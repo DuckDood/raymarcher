@@ -11,6 +11,7 @@ src glad.c
 
 srcdir src
 
+srcflag -Iinclude
 
 buildflag -lSDL3
 buildflag -lGL
@@ -22,6 +23,7 @@ check src/main.vert
 check src/main.frag
 
 src main.c
+src vectors.c
 
 build raymarcher
 

@@ -1,3 +1,4 @@
+#include <SDL3/SDL_events.h>
 #include <SDL3/SDL_video.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,6 +7,10 @@
 #define SDL_MAIN_USE_CALLBACKS 1
 #include <SDL3/SDL_main.h>
 #include <glad/glad.h>
+
+
+
+#include <vectors.h>
 
 #define WIDTH 800
 #define HEIGHT 600
@@ -18,6 +23,9 @@ struct progstate {
 	GLuint screen_tri_vbo;
 
 	GLuint raymarch_prog;
+
+	vec3 cam_pos;
+	vec3 cam_rotation; // 0,1,2 for pitch,yaw,roll
 };
 
 SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unused]]char **argv) {
@@ -130,6 +138,10 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 	glDeleteShader(vertex_shader);
 	glDeleteShader(fragment_shader);
 
+	st->cam_pos = (vec3){0};
+	st->cam_rotation = (vec3){0};
+
+	SDL_SetWindowRelativeMouseMode(st->window, 1);
 
 
 
@@ -161,11 +173,17 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {
 }
 SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 	struct progstate *st = appstate;
-	(void)st;
 
 	switch(event->type) {
 		case SDL_EVENT_QUIT:
 			return SDL_APP_SUCCESS;
+			break;
+		case SDL_EVENT_MOUSE_MOTION:
+			st->cam_rotation[0] += event->motion.xrel / HEIGHT;
+			st->cam_rotation[1] += event->motion.yrel / HEIGHT;
+
+			if(st->cam_rotation[1] > 3.141/2) st->cam_rotation[1] = 3.141/2;
+			if(st->cam_rotation[1] < -3.141/2) st->cam_rotation[1] = -3.141/2;
 			break;
 	}
 
@@ -176,8 +194,11 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 	glClearColor(1, 0, 1, 1);
 	glClear(GL_COLOR_BUFFER_BIT);
 
+	mat4 rotation_matrix = gen_rotation_matrix(st->cam_rotation[0], st->cam_rotation[1], st->cam_rotation[2]);
+
 	glUseProgram(st->raymarch_prog);
 	glUniform2f(glGetUniformLocation(st->raymarch_prog, "resolution"), WIDTH, HEIGHT);
+	glUniformMatrix4fv(glGetUniformLocation(st->raymarch_prog, "camRotationMatrix"), 1, false, (GLfloat*)&rotation_matrix);
 
 	glBindVertexArray(st->screen_tri_vao);
 
