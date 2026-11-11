@@ -22,6 +22,10 @@ float getSphereDistance(camRay ray, sphere shape) {
 	return length(ray.position - shape.position) - shape.radius;
 }
 
+vec3 getSphereNormal(vec3 position, sphere shape) {
+	return normalize(position - shape.position);
+}
+
 sphere shape = sphere(
 		vec3(0.0, 0.0, 3.0),
 		2.0
@@ -35,11 +39,13 @@ void main() {
 
 	int max_steps = 100;
 	bool hit = false;
+	vec3 normal = vec3(0);
 	for(int i = 0; i < 100; i++) {
 		float distToShape = getSphereDistance(ray, shape);
 
 		if(distToShape < 0.01) {
 			hit = true;
+			normal = getSphereNormal(ray.position, shape);
 			break;
 		}
 
@@ -47,7 +53,8 @@ void main() {
 	}
 
 	if(hit) {
-		FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+		float lightness = dot(normal, normalize(vec3(-0.5, 1, -0.3))) * 0.5 + 0.5;
+		FragColor = vec4(lightness * 1.0, 0.0, 0.0, 1.0);
 	} else {
 		FragColor = vec4(0.0, 0.0, 0.0, 1.0);
 	}
