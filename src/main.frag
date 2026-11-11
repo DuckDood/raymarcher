@@ -28,9 +28,10 @@ sphere shape = sphere(
 		);
 
 void main() {
+	vec4 aspectRatio = vec4(uResolution.x / uResolution.y, 1.0, 1.0, 1.0);
 	camRay ray;
 	ray.position = uCamPosition;
-	ray.direction = normalize((uCamRotationMatrix * vec4(gl_FragCoord.xy / uResolution * 2.0 - 1.0, 1.0, 0.0)).xyz);
+	ray.direction = normalize((uCamRotationMatrix * vec4(gl_FragCoord.xy / uResolution * 2.0 - 1.0, 1.0, 0.0) * aspectRatio).xyz);
 
 	int max_steps = 100;
 	bool hit = false;
