@@ -201,14 +201,14 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 		st->cam_pos[0] += 0.1 * sin(st->cam_rotation[0]) * cos(st->cam_rotation[1]);
 		st->cam_pos[2] += 0.1 * cos(st->cam_rotation[0]) * cos(st->cam_rotation[1]);
 
-		st->cam_pos[1] += 0.1 * sin(st->cam_rotation[1]);
+		st->cam_pos[1] -= 0.1 * sin(st->cam_rotation[1]);
 	}
 
 	if(key_states[SDL_SCANCODE_S]) {
 		st->cam_pos[0] -= 0.1 * sin(st->cam_rotation[0]) * cos(st->cam_rotation[1]);
 		st->cam_pos[2] -= 0.1 * cos(st->cam_rotation[0]) * cos(st->cam_rotation[1]);
 
-		st->cam_pos[1] -= 0.1 * sin(st->cam_rotation[1]);
+		st->cam_pos[1] += 0.1 * sin(st->cam_rotation[1]);
 	}
 
 	if(key_states[SDL_SCANCODE_A]) {
