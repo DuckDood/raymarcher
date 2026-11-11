@@ -197,8 +197,9 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 	mat4 rotation_matrix = gen_rotation_matrix(st->cam_rotation[0], st->cam_rotation[1], st->cam_rotation[2]);
 
 	glUseProgram(st->raymarch_prog);
-	glUniform2f(glGetUniformLocation(st->raymarch_prog, "resolution"), WIDTH, HEIGHT);
-	glUniformMatrix4fv(glGetUniformLocation(st->raymarch_prog, "camRotationMatrix"), 1, false, (GLfloat*)&rotation_matrix);
+	glUniform2f(glGetUniformLocation(st->raymarch_prog, "uResolution"), WIDTH, HEIGHT);
+	glUniform3fv(glGetUniformLocation(st->raymarch_prog, "uCamPosition"), 1, (GLfloat*)&st->cam_pos);
+	glUniformMatrix4fv(glGetUniformLocation(st->raymarch_prog, "uCamRotationMatrix"), 1, false, (GLfloat*)&rotation_matrix);
 
 	glBindVertexArray(st->screen_tri_vao);
 
