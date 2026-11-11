@@ -228,6 +228,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	glUseProgram(st->raymarch_prog);
+	glUniform1f(glGetUniformLocation(st->raymarch_prog, "uTime"), (float)SDL_GetTicks()/1000);
 	glUniform2f(glGetUniformLocation(st->raymarch_prog, "uResolution"), WIDTH, HEIGHT);
 	glUniform3fv(glGetUniformLocation(st->raymarch_prog, "uCamPosition"), 1, (GLfloat*)&st->cam_pos);
 	glUniformMatrix4fv(glGetUniformLocation(st->raymarch_prog, "uCamRotationMatrix"), 1, false, (GLfloat*)&rotation_matrix);
