@@ -1,7 +1,9 @@
-#include <SDL3/SDL_events.h>
-#include <SDL3/SDL_video.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
+
+#include <SDL3/SDL_events.h>
+#include <SDL3/SDL_video.h>
 
 #include <SDL3/SDL.h>
 #define SDL_MAIN_USE_CALLBACKS 1
@@ -191,10 +193,38 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 }
 SDL_AppResult SDL_AppIterate(void *appstate) {
 	struct progstate *st = appstate;
-	glClearColor(1, 0, 1, 1);
-	glClear(GL_COLOR_BUFFER_BIT);
+	
+	const bool * const key_states = SDL_GetKeyboardState(NULL);
+
+	if(key_states[SDL_SCANCODE_W]) {
+		st->cam_pos[0] += 0.1 * sin(st->cam_rotation[0]) * cos(st->cam_rotation[1]);
+		st->cam_pos[2] += 0.1 * cos(st->cam_rotation[0]) * cos(st->cam_rotation[1]);
+
+		st->cam_pos[1] += 0.1 * sin(st->cam_rotation[1]);
+	}
+
+	if(key_states[SDL_SCANCODE_S]) {
+		st->cam_pos[0] -= 0.1 * sin(st->cam_rotation[0]) * cos(st->cam_rotation[1]);
+		st->cam_pos[2] -= 0.1 * cos(st->cam_rotation[0]) * cos(st->cam_rotation[1]);
+
+		st->cam_pos[1] -= 0.1 * sin(st->cam_rotation[1]);
+	}
+
+	if(key_states[SDL_SCANCODE_A]) {
+		st->cam_pos[0] -= 0.1 * cos(st->cam_rotation[0]) * cos(st->cam_rotation[1]);
+		st->cam_pos[2] += 0.1 * sin(st->cam_rotation[0]) * cos(st->cam_rotation[1]);
+	}
+
+	if(key_states[SDL_SCANCODE_D]) {
+		st->cam_pos[0] += 0.1 * cos(st->cam_rotation[0]) * cos(st->cam_rotation[1]);
+		st->cam_pos[2] -= 0.1 * sin(st->cam_rotation[0]) * cos(st->cam_rotation[1]);
+	}
+
 
 	mat4 rotation_matrix = gen_rotation_matrix(st->cam_rotation[0], st->cam_rotation[1], st->cam_rotation[2]);
+
+	glClearColor(1, 0, 1, 1);
+	glClear(GL_COLOR_BUFFER_BIT);
 
 	glUseProgram(st->raymarch_prog);
 	glUniform2f(glGetUniformLocation(st->raymarch_prog, "uResolution"), WIDTH, HEIGHT);
