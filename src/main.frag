@@ -65,13 +65,13 @@ vec2 smin( float a, float b, float k ) { // from https://iquilezles.org/articles
 float distToScene(vec3 position) {
 	float distToSphere = getSphereDistance(position, shape);
 	float distToRect = getRectDistance(position, cube);
-	return smin(distToSphere, distToRect, 0.4).x;
+	return smin(distToSphere, distToRect, 0.5).x;
 }
 
 vec3 sceneCol(vec3 position) {
 	float distToSphere = getSphereDistance(position, shape);
 	float distToRect = getRectDistance(position, cube);
-	return mix(vec3(1.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0), smin(distToSphere, distToRect, 0.4).y);
+	return mix(vec3(1.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0), smin(distToSphere, distToRect, 0.5).y);
 }
 
 
@@ -89,7 +89,7 @@ void main() {
 	bool hit = false;
 	vec3 normal = vec3(0);
 	float t = 0.5;
-	for(int i = 0; i < 100; i++) {
+	for(int i = 0; true; i++) {
 		float dist = distToScene(ray.position);
 
 		if(dist < 0.001) {
@@ -109,9 +109,13 @@ void main() {
 			//t = distToShapeFactor;
 			break;
 		}
+		if(dist > 100) {
+			break;
+		}
 
 		ray.position += ray.direction * dist;
 	}
+
 
 	if(hit) {
 		float lightness = dot(normal, normalize(vec3(-0.5, 1, -0.3))) * 0.5 + 0.5;
