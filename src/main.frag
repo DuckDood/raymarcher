@@ -39,9 +39,9 @@ float getRectDistance(vec3 ray, rect shape) {
 	return unsignedDist + dstInsideBox;
 }
 
-vec3 getNormal(float distCenter, float distPosX, float distPosY, float distPosZ) {
+/*vec3 getNormal(float distCenter, float distPosX, float distPosY, float distPosZ) {
 	return normalize(vec3(distPosX-distCenter, distPosY-distCenter, distPosZ-distCenter));
-}
+}*/
 
 sphere shape = sphere(
 		vec3(0.0, 0.0, 0.0),
@@ -75,6 +75,10 @@ vec3 sceneCol(vec3 position) {
 }
 
 
+vec3 getNormal(float distPosX, float distNegX, float distPosY, float distNegY, float distPosZ, float distNegZ) {
+	return normalize(vec3(distPosX-distNegX, distPosY-distNegY, distPosZ-distNegZ));
+}
+
 void main() {
 	float aspectRatio = uResolution.x / uResolution.y;
 	camRay ray;
@@ -92,12 +96,16 @@ void main() {
 			hit = true;
 
 			float step = 0.001;
-			float distToShapeX = distToScene(ray.position + vec3(step, 0.0, 0.0));
-			float distToShapeY = distToScene(ray.position + vec3(0.0, step, 0.0));
-			float distToShapeZ = distToScene(ray.position + vec3(0.0, 0.0, step));
+			float distToShapePosX = distToScene(ray.position + vec3(step, 0.0, 0.0));
+			float distToShapePosY = distToScene(ray.position + vec3(0.0, step, 0.0));
+			float distToShapePosZ = distToScene(ray.position + vec3(0.0, 0.0, step));
+
+			float distToShapeNegX = distToScene(ray.position - vec3(step, 0.0, 0.0));
+			float distToShapeNegY = distToScene(ray.position - vec3(0.0, step, 0.0));
+			float distToShapeNegZ = distToScene(ray.position - vec3(0.0, 0.0, step));
 
 
-			normal = getNormal(dist, distToShapeX, distToShapeY, distToShapeZ);
+			normal = getNormal(distToShapePosX, distToShapeNegX, distToShapePosY, distToShapeNegY, distToShapePosZ, distToShapeNegZ);
 			//t = distToShapeFactor;
 			break;
 		}
