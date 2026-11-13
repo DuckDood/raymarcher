@@ -140,8 +140,8 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 	glDeleteShader(vertex_shader);
 	glDeleteShader(fragment_shader);
 
-	st->cam_pos = (vec3){0};
-	st->cam_rotation = (vec3){0};
+	st->cam_pos = (vec3){1, 0, -3};
+	st->cam_rotation = (vec3){-3.141/2 + 1, 0, 0};
 
 	SDL_GL_SetSwapInterval(1);
 	SDL_SetWindowRelativeMouseMode(st->window, 1);

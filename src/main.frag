@@ -44,13 +44,13 @@ float getRectDistance(vec3 ray, rect shape) {
 }*/
 
 sphere shape = sphere(
-		vec3(0.0, 0.0, 0.0),
-		2.0
+		vec3(0.0, cos(uTime), 0.0),
+		1.0
 		);
 
 rect cube = rect(
-			vec3(0.0, 0.0, sin(uTime*0.5)*10.0),
-			vec3(1.0, 1.0, 2.0)
+			vec3(0.0, 0.0, sin(uTime*2)*0),
+			vec3(1.0, 1.0, 2.5)
 		);
 
 
@@ -62,16 +62,27 @@ vec2 smin( float a, float b, float k ) { // from https://iquilezles.org/articles
 	return (a<b) ? vec2(a-s,m) : vec2(b-s,1.0-m);
 }
 
+vec2 smax( float a, float b, float k ) { // from https://iquilezles.org/articles/smin/
+	vec2 imin = smin(-a, -b, k);
+	return vec2(-imin.x, imin.y);
+}
+
 float distToScene(vec3 position) {
 	float distToSphere = getSphereDistance(position, shape);
 	float distToRect = getRectDistance(position, cube);
-	return smin(distToSphere, distToRect, 0.5).x;
+	return min(smax(distToRect, -distToSphere, 0.2).x, distToSphere);
 }
 
 vec3 sceneCol(vec3 position) {
 	float distToSphere = getSphereDistance(position, shape);
 	float distToRect = getRectDistance(position, cube);
-	return mix(vec3(1.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0), smin(distToSphere, distToRect, 0.5).y);
+	float smoothPart = smax(distToRect, -distToSphere, 0.2).x;
+	float smoothFactor = smax(distToRect, -distToSphere, 0.2).y;
+	float spherePart = distToSphere;
+	if(spherePart < smoothPart) {
+		return vec3(0.2, 0.2, 0.2);
+	};
+	return mix(vec3(1.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0), smoothFactor);
 }
 
 
@@ -89,7 +100,8 @@ void main() {
 	bool hit = false;
 	vec3 normal = vec3(0);
 	float t = 0.5;
-	for(int i = 0; true; i++) {
+	int step_count = 0;
+	for(; true; step_count++) {
 		float dist = distToScene(ray.position);
 
 		if(dist < 0.001) {
@@ -117,11 +129,21 @@ void main() {
 	}
 
 
+	vec3 lightDir = normalize(vec3(-0.5, 1, -0.3));
 	if(hit) {
-		float lightness = dot(normal, normalize(vec3(-0.5, 1, -0.3))) * 0.5 + 0.5;
+		float lightness = dot(normal, lightDir) * 0.5 + 0.5;
 		vec3 col = sceneCol(ray.position);
-		FragColor = vec4(lightness * col, 1.0);
+		vec3 viewDir = normalize(uCamPosition - ray.position);
+
+		vec3 halfDir = normalize(viewDir + lightDir);
+
+		float shininess = 100;
+		float specularComponent = pow(max(dot(normal, halfDir), 0.0), shininess);
+
+		FragColor = vec4(lightness * col + vec3(specularComponent), 1.0);
 	} else {
-		FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+		vec3 sun = vec3(pow(dot(ray.direction, lightDir) * 0.5 + 0.5, 100));
+		vec3 sky = vec3(0.5, 0.5, 0.9);
+		FragColor = vec4(sun + sky, 1.0);
 	}
 }
