@@ -62,6 +62,18 @@ vec2 smin( float a, float b, float k ) { // from https://iquilezles.org/articles
 	return (a<b) ? vec2(a-s,m) : vec2(b-s,1.0-m);
 }
 
+float distToScene(vec3 position) {
+	float distToSphere = getSphereDistance(position, shape);
+	float distToRect = getRectDistance(position, cube);
+	return smin(distToSphere, distToRect, 0.4).x;
+}
+
+vec3 sceneCol(vec3 position) {
+	float distToSphere = getSphereDistance(position, shape);
+	float distToRect = getRectDistance(position, cube);
+	return mix(vec3(1.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0), smin(distToSphere, distToRect, 0.4).y);
+}
+
 
 void main() {
 	float aspectRatio = uResolution.x / uResolution.y;
@@ -72,44 +84,30 @@ void main() {
 	int max_steps = 100;
 	bool hit = false;
 	vec3 normal = vec3(0);
-	float t = 0;
+	float t = 0.5;
 	for(int i = 0; i < 100; i++) {
-		float distToSphere = getSphereDistance(ray.position, shape);
-		float distToRect = getRectDistance(ray.position, cube);
+		float dist = distToScene(ray.position);
 
-		float distToShape = smin(distToSphere, distToRect, 1).x;
-		float distToShapeFactor = smin(distToSphere, distToRect, 1).y;
-
-		if(distToShape < 0.01) {
+		if(dist < 0.001) {
 			hit = true;
 
 			float step = 0.001;
-			distToSphere = getSphereDistance(ray.position + vec3(step, 0.0, 0.0), shape);
-			distToRect = getRectDistance(ray.position + vec3(step, 0.0, 0.0), cube);
+			float distToShapeX = distToScene(ray.position + vec3(step, 0.0, 0.0));
+			float distToShapeY = distToScene(ray.position + vec3(0.0, step, 0.0));
+			float distToShapeZ = distToScene(ray.position + vec3(0.0, 0.0, step));
 
-			float distToShapeX = smin(distToSphere, distToRect, 1).x;
 
-			distToSphere = getSphereDistance(ray.position + vec3(0.0, step, 0.0), shape);
-			distToRect = getRectDistance(ray.position + vec3(0.0, step, 0.0), cube);
-
-			float distToShapeY = smin(distToSphere, distToRect, 1).x;
-
-			distToSphere = getSphereDistance(ray.position + vec3(0.0, 0.0, step), shape);
-			distToRect = getRectDistance(ray.position + vec3(0.0, 0.0, step), cube);
-
-			float distToShapeZ = smin(distToSphere, distToRect, 1).x;
-
-			normal = getNormal(distToShape, distToShapeX, distToShapeY, distToShapeZ);
-			t = distToShapeFactor;
+			normal = getNormal(dist, distToShapeX, distToShapeY, distToShapeZ);
+			//t = distToShapeFactor;
 			break;
 		}
 
-		ray.position += ray.direction * distToShape;
+		ray.position += ray.direction * dist;
 	}
 
 	if(hit) {
 		float lightness = dot(normal, normalize(vec3(-0.5, 1, -0.3))) * 0.5 + 0.5;
-		vec3 col = mix(vec3(1.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0), t);
+		vec3 col = sceneCol(ray.position);
 		FragColor = vec4(lightness * col, 1.0);
 	} else {
 		FragColor = vec4(0.0, 0.0, 0.0, 1.0);
