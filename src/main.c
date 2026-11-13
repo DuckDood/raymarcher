@@ -176,6 +176,7 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {
 }
 SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 	struct progstate *st = appstate;
+	glEnable(GL_FRAMEBUFFER_SRGB);
 
 	switch(event->type) {
 		case SDL_EVENT_QUIT:
