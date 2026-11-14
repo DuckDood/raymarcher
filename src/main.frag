@@ -29,9 +29,19 @@ struct shape {
 	uint type;
 };
 
+
 const uint SHAPE_TYPE_SPHERE = uint(0);
 const uint SHAPE_TYPE_RECT = uint(1);
 
+struct renderCombination {
+	int index1;
+	int index2;
+	uint type;
+	float smoothingValue;
+};
+
+const uint COMBINE_TYPE_MIN = uint(0);
+const uint COMBINE_TYPE_MAX = uint(1);
 
 float getSphereDistance(vec3 position, shape object) {
 	return length((inverse(object.transformation) * vec4(position, 1.0)).xyz) - object.params.x;
@@ -81,6 +91,12 @@ layout (std140) uniform sph
 			)
 	);*/
 
+int renderCombinationCount = 1;
+renderCombination combinations[1] = renderCombination[](
+		renderCombination(0, 1, COMBINE_TYPE_MIN, 0.5)
+		);
+
+
 vec2 smin( float a, float b, float k ) { // from https://iquilezles.org/articles/smin/
 	float h = 1.0 - min( abs(a-b)/(6.0*k), 1.0 );
 	float w = h*h*h;
@@ -95,36 +111,21 @@ vec2 smax( float a, float b, float k ) { // from https://iquilezles.org/articles
 }
 
 float distToScene(vec3 position) {
-	//return 101.0;
-	//sphere shape = sphere(uPosition.xyz, uRadius);
-	/*float distToSphere = getSphereDistance(position, shape);
-	float distToRect = getRectDistance(position, cube);
-	return min(smax(distToRect, -distToSphere, 0.2).x, distToSphere);*/
-	/*float dist = 1000000;
-	for(int i = 0; i < shapeCount; i++) {
-		dist = smax(dist, -getShapeDistance(position, shapes[i]), 0.5).x;
-	}*/
-	float sphereDist = getShapeDistance(position, shapes[1]);
-	float rectDist = getShapeDistance(position, shapes[0]);
-	//float dist = smax(sphereDist, -rectDist, 0.5).x;
-	float dist = min(smax(rectDist, -sphereDist, 0.3).x, sphereDist);
-	//float dist1 = getShapeDistance(position, shapes[0]);
-	//float dist2 = getShapeDistance(position, shapes[1]);
-	//return min(dist1, smax(-dist1, dist2, 0.2).x);
+	float dist;
+	for(int i = 0; i < renderCombinationCount; i++) {
+		switch(combinations[i].type) {
+			case COMBINE_TYPE_MIN:
+				float dist1 = getShapeDistance(position, shapes[combinations[i].index1]);
+				float dist2 = getShapeDistance(position, shapes[combinations[i].index2]);
+				dist = smin(dist1, dist2, combinations[i].smoothingValue).x;
+				break;
+		}
+	}
+
 	return dist;
 }
 
 vec3 sceneCol(vec3 position) {
-	/*float sphereDist = getShapeDistance(position, shapes[0]);
-	float rectDist = getShapeDistance(position, shapes[1]);
-
-	float smoothPart = smax(rectDist, -sphereDist, 0.2).x;
-	float smoothFactor = smax(rectDist, -sphereDist, 0.2).y;
-
-	if(sphereDist < smoothPart) {
-		return vec3(0.2, 0.2, 0.2);
-	};
-	return mix(vec3(1.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0), smoothFactor);*/
 	return vec3(1.0, 0.0, 0.0);
 }
 
@@ -188,8 +189,9 @@ void main() {
 
 		FragColor = vec4(lightness * col + vec3(specularComponent), 1.0);
 	} else {
-		vec3 sun = vec3(pow(dot(ray.direction, lightDir) * 0.5 + 0.5, 100));
+		/*vec3 sun = vec3(pow(dot(ray.direction, lightDir) * 0.5 + 0.5, 100));
 		vec3 sky = vec3(0.5, 0.5, 0.9);
-		FragColor = vec4(sun + sky, 1.0);
+		FragColor = vec4(sun + sky, 1.0);*/
+		FragColor = vec4(0.0, 0.0, 0.0, 1.0);
 	}
 }

@@ -261,9 +261,9 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 	sp[0].params[2] = 2;
 	sp[0].type = 1;
 
-	sp[1].transformation = m4_m4_mul(gen_translation_matrix((vec3){sin(SDL_GetTicks()/1000.) * 2, 0, 0}), gen_rotation_matrix(0,0,0));
+	sp[1].transformation = gen_translation_matrix((vec3){0, -100, 0});
 
-	sp[1].params[0] = 1;
+	sp[1].params[0] = 98;
 	sp[1].type = 0;
 
 	int shape_count = 2;
