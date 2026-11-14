@@ -147,21 +147,20 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 
 	glGenBuffers(1, &st->shape_buffer);
 	glBindBuffer(GL_UNIFORM_BUFFER, st->shape_buffer);
-	struct sphere{
-		vec4 position;
-		float radius;
-	};
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(struct sphere), NULL, GL_DYNAMIC_DRAW);
+	glBufferData(GL_UNIFORM_BUFFER, 1024, NULL, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 	glUniformBlockBinding(st->raymarch_prog, glGetUniformBlockIndex(st->raymarch_prog, "sph"), 0);
 
-	glBindBufferRange(GL_UNIFORM_BUFFER, 0, st->shape_buffer, 0, sizeof(struct sphere));
+	glBindBufferRange(GL_UNIFORM_BUFFER, 0, st->shape_buffer, 0, 1024);
 
 
 
-	st->cam_pos = (vec3){1, 0, -3};
-	st->cam_rotation = (vec3){-3.141/2 + 1, 0, 0};
+	//st->cam_pos = (vec3){1, 0, -3};
+	//st->cam_rotation = (vec3){-3.141/2 + 1, 0, 0};
+	//
+	st->cam_pos = (vec3){0, 0, -3};
+	st->cam_rotation = (vec3){0};
 
 	SDL_GL_SetSwapInterval(1);
 	SDL_SetWindowRelativeMouseMode(st->window, 1);
@@ -249,16 +248,29 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 	glClear(GL_COLOR_BUFFER_BIT);
 
 
-	struct sphere{
-		vec4 position;
-		float radius;
+	struct shape{
+		mat4 transformation;
+		vec4 params;
+		uint32_t type;
 	};
-	struct sphere sp;
-	sp.position = (vec4){0, cos(2*SDL_GetTicks()/1000.), 0, 0};
-	sp.radius = 1;
+	struct shape sp[2];
+	sp[0].transformation = m4_m4_mul(gen_translation_matrix((vec3){0, cos(SDL_GetTicks()/1000.)*0, 0}), gen_rotation_matrix(SDL_GetTicks()/1000., SDL_GetTicks()/2000., 0));
+
+	sp[0].params[0] = 1;
+	sp[0].params[1] = 1;
+	sp[0].params[2] = 2;
+	sp[0].type = 1;
+
+	sp[1].transformation = m4_m4_mul(gen_translation_matrix((vec3){sin(SDL_GetTicks()/1000.) * 2, 0, 0}), gen_rotation_matrix(0,0,0));
+
+	sp[1].params[0] = 1;
+	sp[1].type = 0;
+
+	int shape_count = 2;
 
 	glBindBuffer(GL_UNIFORM_BUFFER, st->shape_buffer);
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(struct sphere), &sp);
+	glBufferSubData(GL_UNIFORM_BUFFER, (long)16, sizeof(struct shape) * shape_count, &sp);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(int), &shape_count);
 
 	glUseProgram(st->raymarch_prog);
 	glUniform1f(glGetUniformLocation(st->raymarch_prog, "uTime"), (float)SDL_GetTicks()/1000);

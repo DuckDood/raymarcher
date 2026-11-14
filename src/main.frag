@@ -24,8 +24,7 @@ struct camRay {
 };
 
 struct shape {
-	//mat4 transformation;
-	vec3 position;
+	mat4 transformation;
 	vec4 params;
 	uint type;
 };
@@ -35,12 +34,13 @@ const uint SHAPE_TYPE_RECT = uint(1);
 
 
 float getSphereDistance(vec3 position, shape object) {
-	return length(position - object.position) - object.params.x;
+	return length((inverse(object.transformation) * vec4(position, 1.0)).xyz) - object.params.x;
+	//return length(vec4(position, 1.0).xyz) - object.params.x;
 }
 
 float getRectDistance(vec3 position, shape object) {
 	// general implementation from sebastian lague's video on ray marching
-	vec3 off = abs(position - object.position) - object.params.xyz;
+	vec3 off = abs((inverse(object.transformation) * vec4(position, 1.0)).xyz) - object.params.xyz;
 
 	float unsignedDist = length(max(off, 0.0));
 
@@ -61,28 +61,14 @@ float getShapeDistance(vec3 position, shape object) {
 	return 0.0; // sigh
 }
 
-/*vec3 getNormal(float distCenter, float distPosX, float distPosY, float distPosZ) {
-	return normalize(vec3(distPosX-distCenter, distPosY-distCenter, distPosZ-distCenter));
-}*/
-
-/*sphere shape = sphere(
-		vec3(0.0, cos(uTime), 0.0),
-		1.0
-		);*/
-
-/*rect cube = rect(
-			vec3(0.0, 0.0, sin(uTime*2)*0),
-			vec3(1.0, 1.0, 2.5)
-		);*/
-
 layout (std140) uniform sph
 {
-	vec4 uPosition;
-	float uRadius;
+	int shapeCount;
+	shape shapes[5];
 };
 
 
-shape shapes[2] = shape[](
+/*shape shapes[2] = shape[](
 	shape(
 			vec3(0.0, cos(uTime), 0.0),
 			vec4(1.0, 0.0, 0.0, 0.0),
@@ -93,7 +79,7 @@ shape shapes[2] = shape[](
 			vec4(1.0, 1.0, 2.5, 0.0),
 			SHAPE_TYPE_RECT
 			)
-	);
+	);*/
 
 vec2 smin( float a, float b, float k ) { // from https://iquilezles.org/articles/smin/
 	float h = 1.0 - min( abs(a-b)/(6.0*k), 1.0 );
@@ -109,17 +95,27 @@ vec2 smax( float a, float b, float k ) { // from https://iquilezles.org/articles
 }
 
 float distToScene(vec3 position) {
+	//return 101.0;
 	//sphere shape = sphere(uPosition.xyz, uRadius);
 	/*float distToSphere = getSphereDistance(position, shape);
 	float distToRect = getRectDistance(position, cube);
 	return min(smax(distToRect, -distToSphere, 0.2).x, distToSphere);*/
-	float dist1 = getShapeDistance(position, shapes[0]);
-	float dist2 = getShapeDistance(position, shapes[1]);
-	return min(dist1, smax(-dist1, dist2, 0.2).x);
+	/*float dist = 1000000;
+	for(int i = 0; i < shapeCount; i++) {
+		dist = smax(dist, -getShapeDistance(position, shapes[i]), 0.5).x;
+	}*/
+	float sphereDist = getShapeDistance(position, shapes[1]);
+	float rectDist = getShapeDistance(position, shapes[0]);
+	//float dist = smax(sphereDist, -rectDist, 0.5).x;
+	float dist = min(smax(rectDist, -sphereDist, 0.3).x, sphereDist);
+	//float dist1 = getShapeDistance(position, shapes[0]);
+	//float dist2 = getShapeDistance(position, shapes[1]);
+	//return min(dist1, smax(-dist1, dist2, 0.2).x);
+	return dist;
 }
 
 vec3 sceneCol(vec3 position) {
-	float sphereDist = getShapeDistance(position, shapes[0]);
+	/*float sphereDist = getShapeDistance(position, shapes[0]);
 	float rectDist = getShapeDistance(position, shapes[1]);
 
 	float smoothPart = smax(rectDist, -sphereDist, 0.2).x;
@@ -128,7 +124,8 @@ vec3 sceneCol(vec3 position) {
 	if(sphereDist < smoothPart) {
 		return vec3(0.2, 0.2, 0.2);
 	};
-	return mix(vec3(1.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0), smoothFactor);
+	return mix(vec3(1.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0), smoothFactor);*/
+	return vec3(1.0, 0.0, 0.0);
 }
 
 
@@ -137,6 +134,8 @@ vec3 getNormal(float distPosX, float distNegX, float distPosY, float distNegY, f
 }
 
 void main() {
+	//FragColor = vec4(float(shapeCount)/10.0, 0.0, 0.0, 1.0);
+	//return;
 	float aspectRatio = uResolution.x / uResolution.y;
 	camRay ray;
 	ray.position = uCamPosition;
@@ -148,6 +147,7 @@ void main() {
 	float t = 0.5;
 	int step_count = 0;
 	for(; true; step_count++) {
+		//if(step_count > 500) break;
 		float dist = distToScene(ray.position);
 
 		if(dist < 0.001) {
