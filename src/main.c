@@ -17,6 +17,7 @@
 #define WIDTH 800
 #define HEIGHT 600
 
+
 struct progstate {
 	SDL_Window *window;
 	SDL_GLContext gl_context;
@@ -28,6 +29,8 @@ struct progstate {
 
 	vec3 cam_pos;
 	vec3 cam_rotation; // 0,1,2 for pitch,yaw,roll
+
+	GLuint shape_buffer;
 };
 
 SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unused]]char **argv) {
@@ -76,6 +79,7 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 		5, -5,
 		0, 5
 	};
+
 
 	glGenVertexArrays(1, &st->screen_tri_vao);
 	glGenBuffers(1, &st->screen_tri_vbo);
@@ -139,6 +143,22 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 
 	glDeleteShader(vertex_shader);
 	glDeleteShader(fragment_shader);
+
+
+	glGenBuffers(1, &st->shape_buffer);
+	glBindBuffer(GL_UNIFORM_BUFFER, st->shape_buffer);
+	struct sphere{
+		vec4 position;
+		float radius;
+	};
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(struct sphere), NULL, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+	glUniformBlockBinding(st->raymarch_prog, glGetUniformBlockIndex(st->raymarch_prog, "sph"), 0);
+
+	glBindBufferRange(GL_UNIFORM_BUFFER, 0, st->shape_buffer, 0, sizeof(struct sphere));
+
+
 
 	st->cam_pos = (vec3){1, 0, -3};
 	st->cam_rotation = (vec3){-3.141/2 + 1, 0, 0};
@@ -227,6 +247,18 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
 	glClearColor(1, 0, 1, 1);
 	glClear(GL_COLOR_BUFFER_BIT);
+
+
+	struct sphere{
+		vec4 position;
+		float radius;
+	};
+	struct sphere sp;
+	sp.position = (vec4){0, cos(2*SDL_GetTicks()/1000.), 0, 0};
+	sp.radius = 1;
+
+	glBindBuffer(GL_UNIFORM_BUFFER, st->shape_buffer);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(struct sphere), &sp);
 
 	glUseProgram(st->raymarch_prog);
 	glUniform1f(glGetUniformLocation(st->raymarch_prog, "uTime"), (float)SDL_GetTicks()/1000);

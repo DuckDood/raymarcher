@@ -43,15 +43,21 @@ float getRectDistance(vec3 ray, rect shape) {
 	return normalize(vec3(distPosX-distCenter, distPosY-distCenter, distPosZ-distCenter));
 }*/
 
-sphere shape = sphere(
+/*sphere shape = sphere(
 		vec3(0.0, cos(uTime), 0.0),
 		1.0
-		);
+		);*/
 
 rect cube = rect(
 			vec3(0.0, 0.0, sin(uTime*2)*0),
 			vec3(1.0, 1.0, 2.5)
 		);
+
+layout (std140) uniform sph
+{
+	vec4 uPosition;
+	float uRadius;
+};
 
 
 vec2 smin( float a, float b, float k ) { // from https://iquilezles.org/articles/smin/
@@ -68,12 +74,14 @@ vec2 smax( float a, float b, float k ) { // from https://iquilezles.org/articles
 }
 
 float distToScene(vec3 position) {
+	sphere shape = sphere(uPosition.xyz, uRadius);
 	float distToSphere = getSphereDistance(position, shape);
 	float distToRect = getRectDistance(position, cube);
 	return min(smax(distToRect, -distToSphere, 0.2).x, distToSphere);
 }
 
 vec3 sceneCol(vec3 position) {
+	sphere shape = sphere(uPosition.xyz, uRadius);
 	float distToSphere = getSphereDistance(position, shape);
 	float distToRect = getRectDistance(position, cube);
 	float smoothPart = smax(distToRect, -distToSphere, 0.2).x;
