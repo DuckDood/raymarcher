@@ -109,7 +109,7 @@ mat4 gen_rotation_matrix(float yaw, float pitch, float roll) {
 		0,
 		0,
 		0,
-		0
+		1
 		});
 
 }
