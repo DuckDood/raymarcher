@@ -69,10 +69,10 @@ mat4 transpose(mat4 mat) {
 	out.columns[2][2] = mat.columns[2][2];
 	out.columns[3][2] = mat.columns[2][3];
 
-	out.columns[0][2] = mat.columns[2][0];
-	out.columns[1][2] = mat.columns[2][1];
-	out.columns[2][2] = mat.columns[2][2];
-	out.columns[3][2] = mat.columns[2][3];
+	out.columns[0][3] = mat.columns[3][0];
+	out.columns[1][3] = mat.columns[3][1];
+	out.columns[2][3] = mat.columns[3][2];
+	out.columns[3][3] = mat.columns[3][3];
 
 	return out;
 }
