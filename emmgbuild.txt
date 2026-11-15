@@ -4,6 +4,9 @@ dir build
 compiler ${CC}
 linker ${CC}
 
+# emscripten stuff
+buildflag $(if $(findstring emcc,${CC}),-sMAX_WEBGL_VERSION=2,)
+
 
 srcflag -Iglad/include
 

@@ -41,9 +41,9 @@ endif
 
 build/raymarcher: obj/glad.c.o obj/main.c.o obj/vectors.c.o src/main.vert src/main.frag 
 ifeq (${OSMODE}, l)
-	${CC} obj/glad.c.o obj/main.c.o obj/vectors.c.o -o build/raymarcher -lSDL3 -lGL -lm
+	${CC} obj/glad.c.o obj/main.c.o obj/vectors.c.o -o build/raymarcher $(if $(findstring emcc,${CC}),-sMAX_WEBGL_VERSION=2,) -lSDL3 -lGL -lm
 else
-	${CC} obj/glad.c.o obj/main.c.o obj/vectors.c.o -o build/raymarcher -lSDL3 -lGL -lm
+	${CC} obj/glad.c.o obj/main.c.o obj/vectors.c.o -o build/raymarcher $(if $(findstring emcc,${CC}),-sMAX_WEBGL_VERSION=2,) -lSDL3 -lGL -lm
 endif
 
 

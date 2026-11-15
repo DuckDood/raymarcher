@@ -8,7 +8,12 @@
 #include <SDL3/SDL.h>
 #define SDL_MAIN_USE_CALLBACKS 1
 #include <SDL3/SDL_main.h>
+
+#ifndef __EMSCRIPTEN__
 #include <glad/glad.h>
+#else
+#include <GLES3/gl3.h>
+#endif
 
 
 
@@ -72,10 +77,12 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 		return SDL_APP_FAILURE;
 	}
 
+#ifndef __EMSCRIPTEN__
 	if(!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
 		fprintf(stderr, "Failed to init GLAD.");
 		return SDL_APP_FAILURE;
 	}
+#endif
 
 	GLfloat tri_vertices[6] = {
 		-5, -5,
@@ -198,7 +205,9 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {
 }
 SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 	struct progstate *st = appstate;
+#ifndef __EMSCRIPTEN__
 	glEnable(GL_FRAMEBUFFER_SRGB);
+#endif
 
 	switch(event->type) {
 		case SDL_EVENT_QUIT:
