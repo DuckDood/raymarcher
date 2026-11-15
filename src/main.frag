@@ -76,6 +76,7 @@ float getTorusDistance(vec3 position, shape object) {
 
 float getCylinderDistance(vec3 position, shape object) {
 	vec3 p = (inverse(object.transformation) * vec4(position, 1.0)).xyz;
+	// https://iquilezles.org/articles/distfunctions/
 	vec2 d = abs(vec2(length(p.xz),p.y)) - vec2(object.params.x,object.params.y);
 	return min(max(d.x,d.y),0.0) + length(max(d,0.0));
 }
