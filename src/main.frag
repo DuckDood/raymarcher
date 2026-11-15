@@ -192,19 +192,15 @@ vec3 getNormal(float distPosX, float distNegX, float distPosY, float distNegY, f
 	return normalize(vec3(distPosX-distNegX, distPosY-distNegY, distPosZ-distNegZ));
 }
 
+struct rayHitInfo {
+	vec3 position;
+	vec3 normal;
+	bool hit;
+};
 
-void main() {
-	//FragColor = vec4(float(shapeCount)/10.0, 0.0, 0.0, 1.0);
-	//return;
-	float aspectRatio = uResolution.x / uResolution.y;
-	camRay ray;
-	ray.position = uCamPosition;
-	ray.direction = normalize((uCamRotationMatrix * vec4((gl_FragCoord.xy / uResolution * 2.0 - 1.0) * vec2(aspectRatio, 1.0), 1.0, 0.0)).xyz);
-
-	int max_steps = 100;
+rayHitInfo march(camRay ray) {
 	bool hit = false;
 	vec3 normal = vec3(0);
-	float t = 0.5;
 	int step_count = 0;
 	for(; true; step_count++) {
 		//if(step_count > 500) break;
@@ -234,6 +230,58 @@ void main() {
 		ray.position += ray.direction * dist;
 	}
 
+	rayHitInfo info;
+	info.hit = hit;
+	info.position = ray.position;
+	info.normal = normal;
+
+	return info;
+}
+
+void main() {
+	//FragColor = vec4(float(shapeCount)/10.0, 0.0, 0.0, 1.0);
+	//return;
+	float aspectRatio = uResolution.x / uResolution.y;
+	camRay ray;
+	ray.position = uCamPosition;
+	ray.direction = normalize((uCamRotationMatrix * vec4((gl_FragCoord.xy / uResolution * 2.0 - 1.0) * vec2(aspectRatio, 1.0), 1.0, 0.0)).xyz);
+
+	/*bool hit = false;
+	vec3 normal = vec3(0);
+	float t = 0.5;
+	int step_count = 0;
+	for(; true; step_count++) {
+		//if(step_count > 500) break;
+		float dist = distToScene(ray.position);
+
+		if(dist < 0.001) {
+			hit = true;
+
+			float step = 0.001;
+			float distToShapePosX = distToScene(ray.position + vec3(step, 0.0, 0.0));
+			float distToShapePosY = distToScene(ray.position + vec3(0.0, step, 0.0));
+			float distToShapePosZ = distToScene(ray.position + vec3(0.0, 0.0, step));
+
+			float distToShapeNegX = distToScene(ray.position - vec3(step, 0.0, 0.0));
+			float distToShapeNegY = distToScene(ray.position - vec3(0.0, step, 0.0));
+			float distToShapeNegZ = distToScene(ray.position - vec3(0.0, 0.0, step));
+
+
+			normal = getNormal(distToShapePosX, distToShapeNegX, distToShapePosY, distToShapeNegY, distToShapePosZ, distToShapeNegZ);
+			//t = distToShapeFactor;
+			break;
+		}
+		if(dist > 100) {
+			break;
+		}
+
+		ray.position += ray.direction * dist;
+	}*/
+
+	rayHitInfo info = march(ray);
+	ray.position = info.position;
+	vec3 normal = info.normal;
+	bool hit = info.hit;
 
 	vec3 lightDir = normalize(vec3(-0.5, 1, -0.3));
 	if(hit) {
