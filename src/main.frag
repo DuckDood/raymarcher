@@ -43,6 +43,8 @@ struct renderCombination {
 
 	float mult1;
 	float mult2;
+
+	int outIndex; // index to output shape (0 for shape to render)
 };
 
 const uint COMBINE_TYPE_MIN = uint(0);
@@ -115,9 +117,9 @@ layout (std140) uniform sph
 
 int renderCombinationCount = 3;
 renderCombination combinations[3] = renderCombination[3](
-		renderCombination(0, 1, COMBINE_TYPE_MIN, 0.5, 1.0, 1.0),
-		renderCombination(toShapeCombineIndex(0), 2, COMBINE_TYPE_MAX, 0.5, 1.0, -1.0),
-		renderCombination(toShapeCombineIndex(1), 2, COMBINE_TYPE_MIN, 0.0, 1.0, 1.0)
+		renderCombination(0, 1, COMBINE_TYPE_MIN, 0.5, 1.0, 1.0, 0),
+		renderCombination(toShapeCombineIndex(0), 2, COMBINE_TYPE_MAX, 0.5, 1.0, -1.0, 0),
+		renderCombination(toShapeCombineIndex(0), 2, COMBINE_TYPE_MIN, 0.0, 1.0, 1.0, 0)
 		);
 
 
@@ -148,7 +150,7 @@ float distToScene(vec3 position) {
 	/*for(int i = 0; i < shapeCount; i++) {
 		dist = min(dist, getShapeDistance(position, shapes[i]));
 	}*/
-	float distances[8]; // make this match the max combination count
+	float distances[8]; // for some reason when this gets bigger it really slows down webgl
 	int distanceTop = 0;
 	for(int i = 0; i < renderCombinationCount; i++) {
 		int bitwiseFactor = 1 << 31;
@@ -174,14 +176,14 @@ float distToScene(vec3 position) {
 
 		switch(combinations[i].type) {
 			case COMBINE_TYPE_MAX:
-				distances[distanceTop++] = smax(dist1, dist2, combinations[i].smoothingValue).x;
+				distances[combinations[i].outIndex] = smax(dist1, dist2, combinations[i].smoothingValue).x;
 				break;
 			case COMBINE_TYPE_MIN:
-				distances[distanceTop++] = smin(dist1, dist2, combinations[i].smoothingValue).x;
+				distances[combinations[i].outIndex] = smin(dist1, dist2, combinations[i].smoothingValue).x;
 				break;
 		}
 	}
-	return distances[distanceTop-1];
+	return distances[0];
 
 	//return d;
 }
