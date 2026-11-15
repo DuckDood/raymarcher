@@ -1,4 +1,5 @@
-#version 330 core
+#version 300 es
+precision mediump float;
 
 out vec4 FragColor;
 
@@ -89,7 +90,7 @@ float getShapeDistance(vec3 position, shape object) {
 layout (std140) uniform sph
 {
 	int shapeCount;
-	shape shapes[32];
+	shape shapes[8];
 };
 
 
@@ -106,15 +107,17 @@ layout (std140) uniform sph
 			)
 	);*/
 
-int toShapeCombineIndex(int i) {
+/*int toShapeCombineIndex(int i) {
 	return i | (1<<31);
-}
+}*/
+
+#define toShapeCombineIndex(i) (i | (1<<31))
 
 int renderCombinationCount = 3;
-renderCombination combinations[3] = renderCombination[](
+renderCombination combinations[3] = renderCombination[3](
 		renderCombination(0, 1, COMBINE_TYPE_MIN, 0.5, 1.0, 1.0),
 		renderCombination(toShapeCombineIndex(0), 2, COMBINE_TYPE_MAX, 0.5, 1.0, -1.0),
-		renderCombination(toShapeCombineIndex(1), 2, COMBINE_TYPE_MIN, 0, 1.0, 1.0)
+		renderCombination(toShapeCombineIndex(1), 2, COMBINE_TYPE_MIN, 0.0, 1.0, 1.0)
 		);
 
 
@@ -145,7 +148,7 @@ float distToScene(vec3 position) {
 	/*for(int i = 0; i < shapeCount; i++) {
 		dist = min(dist, getShapeDistance(position, shapes[i]));
 	}*/
-	float distances[128]; // make this match the max combination count
+	float distances[8]; // make this match the max combination count
 	int distanceTop = 0;
 	for(int i = 0; i < renderCombinationCount; i++) {
 		int bitwiseFactor = 1 << 31;
@@ -223,7 +226,7 @@ rayHitInfo march(camRay ray) {
 			//t = distToShapeFactor;
 			break;
 		}
-		if(dist > 100) {
+		if(dist > 100.0) {
 			break;
 		}
 
@@ -295,7 +298,7 @@ void main() {
 
 		vec3 halfDir = normalize(viewDir + lightDir);
 
-		float shininess = 100;
+		float shininess = 100.0;
 		float specularComponent = pow(max(dot(normal, halfDir), 0.0), shininess);
 		if(shadowInfo.hit){
 			specularComponent = 0.0;
@@ -304,7 +307,7 @@ void main() {
 
 		FragColor = vec4(lightness * col + vec3(specularComponent), 1.0);
 	} else {
-		vec3 sun = vec3(pow(dot(ray.direction, lightDir) * 0.5 + 0.5, 100));
+		vec3 sun = vec3(pow(dot(ray.direction, lightDir) * 0.5 + 0.5, 100.0));
 		vec3 sky = vec3(0.5, 0.5, 0.9);
 		FragColor = vec4(sun + sky, 1.0);
 		//FragColor = vec4(0.0, 0.0, 0.0, 1.0);
