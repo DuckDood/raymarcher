@@ -38,6 +38,9 @@ struct renderCombination {
 	int index2; // same here
 	uint type;
 	float smoothingValue;
+
+	float mult1;
+	float mult2;
 };
 
 const uint COMBINE_TYPE_MIN = uint(0);
@@ -97,8 +100,8 @@ int toShapeCombineIndex(int i) {
 
 int renderCombinationCount = 2;
 renderCombination combinations[2] = renderCombination[](
-		renderCombination(0, 1, COMBINE_TYPE_MIN, 0.5),
-		renderCombination(2, toShapeCombineIndex(0), COMBINE_TYPE_MIN, 0.0)
+		renderCombination(0, 1, COMBINE_TYPE_MIN, 0.5, 1.0, 1.0),
+		renderCombination(toShapeCombineIndex(0), 2, COMBINE_TYPE_MAX, 0.0, 1.0, -1.0)
 		);
 
 
@@ -142,15 +145,15 @@ float distToScene(vec3 position) {
 
 		float dist1, dist2;
 		if(!indexAlreadyCombined1) {
-			dist1 = getShapeDistance(position, shapes[index1]);
+			dist1 = getShapeDistance(position, shapes[index1]) * combinations[i].mult1;
 		} else {
-			dist1 = distances[index1];
+			dist1 = distances[index1] * combinations[i].mult1;
 		}
 
 		if(!indexAlreadyCombined2) {
-			dist2 = getShapeDistance(position, shapes[index2]);
+			dist2 = getShapeDistance(position, shapes[index2]) * combinations[i].mult2;
 		} else {
-			dist2 = distances[index2];
+			dist2 = distances[index2] * combinations[i].mult2;
 		}
 
 		switch(combinations[i].type) {
