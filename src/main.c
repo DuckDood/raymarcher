@@ -275,7 +275,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
 	sp[2].params[0] = 0.7;
 	sp[2].params[1] = 0.5;
-	sp[2].type = 2;
+	sp[2].type = 3;
 
 	int shape_count = 3;
 
