@@ -41,9 +41,9 @@ endif
 
 build/raymarcher: obj/glad.c.o obj/main.c.o obj/vectors.c.o src/main.vert src/main.frag 
 ifeq (${OSMODE}, l)
-	${CXX} obj/glad.c.o obj/main.c.o obj/vectors.c.o -o build/raymarcher -lSDL3 -lGL
+	${CC} obj/glad.c.o obj/main.c.o obj/vectors.c.o -o build/raymarcher -lSDL3 -lGL -lm
 else
-	${CXX} obj/glad.c.o obj/main.c.o obj/vectors.c.o -o build/raymarcher -lSDL3 -lGL
+	${CC} obj/glad.c.o obj/main.c.o obj/vectors.c.o -o build/raymarcher -lSDL3 -lGL -lm
 endif
 
 

@@ -2,6 +2,7 @@ dir obj
 dir build
 
 compiler ${CC}
+linker ${CC}
 
 
 srcflag -Iglad/include
@@ -15,6 +16,7 @@ srcflag -Iinclude
 
 buildflag -lSDL3
 buildflag -lGL
+buildflag -lm
 
 srcflag -std=c23
 srcflag -Wall -Wextra -Werror
