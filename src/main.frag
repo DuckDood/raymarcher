@@ -299,7 +299,7 @@ void main() {
 
 	vec3 lightDir = normalize(vec3(-0.5, 1, -0.3));
 	if(hit) {
-		float lightness = dot(normal, lightDir) * 0.5 + 0.5;
+		float lightness = dot(normal, lightDir);
 		lightness = max(lightness, 0.1);
 		ray.direction =  lightDir;
 		ray.position += normal * 0.01;
