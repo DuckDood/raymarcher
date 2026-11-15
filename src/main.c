@@ -247,14 +247,16 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 	glClearColor(1, 0, 1, 1);
 	glClear(GL_COLOR_BUFFER_BIT);
 
+	float time = SDL_GetTicks()/1000.;
+
 
 	struct shape{
 		mat4 transformation;
 		vec4 params;
 		uint32_t type;
 	};
-	struct shape sp[2];
-	sp[0].transformation = m4_m4_mul(gen_translation_matrix((vec3){0, cos(SDL_GetTicks()/1000.)*0, 0}), gen_rotation_matrix(SDL_GetTicks()/1000., SDL_GetTicks()/2000., 0));
+	struct shape sp[3];
+	sp[0].transformation = m4_m4_mul(gen_translation_matrix((vec3){0, cos(time)*0, 0}), gen_rotation_matrix(time, time*2, 0));
 
 	sp[0].params[0] = 1;
 	sp[0].params[1] = 1;
@@ -266,14 +268,19 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 	sp[1].params[0] = 98;
 	sp[1].type = 0;
 
-	int shape_count = 2;
+	sp[2].transformation = gen_translation_matrix((vec3){2, cos(time) * 4, 1});
+
+	sp[2].params[0] = 2;
+	sp[2].type = 0;
+
+	int shape_count = 3;
 
 	glBindBuffer(GL_UNIFORM_BUFFER, st->shape_buffer);
 	glBufferSubData(GL_UNIFORM_BUFFER, (long)16, sizeof(struct shape) * shape_count, &sp);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(int), &shape_count);
 
 	glUseProgram(st->raymarch_prog);
-	glUniform1f(glGetUniformLocation(st->raymarch_prog, "uTime"), (float)SDL_GetTicks()/1000);
+	glUniform1f(glGetUniformLocation(st->raymarch_prog, "uTime"), (float)time);
 	glUniform2f(glGetUniformLocation(st->raymarch_prog, "uResolution"), WIDTH, HEIGHT);
 	glUniform3fv(glGetUniformLocation(st->raymarch_prog, "uCamPosition"), 1, (GLfloat*)&st->cam_pos);
 	glUniformMatrix4fv(glGetUniformLocation(st->raymarch_prog, "uCamRotationMatrix"), 1, false, (GLfloat*)&rotation_matrix);
