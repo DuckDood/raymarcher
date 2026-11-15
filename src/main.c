@@ -268,10 +268,11 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 	sp[1].params[0] = 98;
 	sp[1].type = 0;
 
-	sp[2].transformation = gen_translation_matrix((vec3){2, cos(time) * 4, 1});
+	sp[2].transformation = m4_m4_mul(gen_rotation_matrix(0, time*3, time), gen_translation_matrix((vec3){1, 0, 0}));
 
-	sp[2].params[0] = 2;
-	sp[2].type = 0;
+	sp[2].params[0] = 0.7;
+	sp[2].params[1] = 0.5;
+	sp[2].type = 2;
 
 	int shape_count = 3;
 
