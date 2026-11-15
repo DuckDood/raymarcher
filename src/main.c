@@ -265,6 +265,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 	struct shape{
 		mat4 transformation;
 		vec4 params;
+		vec4 color;
 		uint32_t type;
 	};
 	struct shape sp[3];
@@ -275,16 +276,22 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 	sp[0].params[2] = 2;
 	sp[0].type = 1;
 
+	sp[0].color = (vec3){1, 0, 0};
+
 	sp[1].transformation = gen_translation_matrix((vec3){0, -100, 0});
 
 	sp[1].params[0] = 98;
 	sp[1].type = 0;
+
+	sp[1].color = (vec3){0, 1, 0};
 
 	sp[2].transformation = m4_m4_mul(gen_rotation_matrix(0, time*3, time), gen_translation_matrix((vec3){1, 0, 0}));
 
 	sp[2].params[0] = 0.7;
 	sp[2].params[1] = 0.5;
 	sp[2].type = 3;
+
+	sp[2].color = (vec3){0, 0, 1};
 
 	int shape_count = 3;
 

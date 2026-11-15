@@ -27,6 +27,7 @@ struct camRay {
 struct shape {
 	mat4 transformation;
 	vec4 params;
+	vec4 color;
 	uint type;
 };
 
@@ -199,7 +200,48 @@ float distToScene(vec3 position) {
 }
 
 vec3 sceneCol(vec3 position) {
-	return vec3(1.0, 0.0, 0.0);
+	vec4 colors[8];
+	float distances[8];
+	for(int i = 0; i < renderCombinationCount; i++) {
+		int bitwiseFactor = 1 << 31;
+
+		bool indexAlreadyCombined1 = (combinations[i].index1 & bitwiseFactor) != 0;
+		bool indexAlreadyCombined2 = (combinations[i].index2 & bitwiseFactor) != 0;
+
+		int index1 = combinations[i].index1 & (~bitwiseFactor);
+		int index2 = combinations[i].index2 & (~bitwiseFactor);
+
+		float dist1, dist2;
+		vec4 color1, color2;
+		if(!indexAlreadyCombined1) {
+			dist1 = getShapeDistance(position, shapes[index1]) * combinations[i].mult1;
+			color1 = shapes[index1].color;
+		} else {
+			dist1 = distances[index1] * combinations[i].mult1;
+			color1 = colors[index1];
+		}
+
+		if(!indexAlreadyCombined2) {
+			dist2 = getShapeDistance(position, shapes[index2]) * combinations[i].mult2;
+			color2 = shapes[index2].color;
+		} else {
+			dist2 = distances[index2] * combinations[i].mult2;
+			color2 = colors[index2];
+		}
+
+		switch(combinations[i].type) {
+			case COMBINE_TYPE_MAX:
+				distances[combinations[i].outIndex] = smax(dist1, dist2, combinations[i].smoothingValue).x;
+				colors[combinations[i].outIndex] = mix(color1, color2, smax(dist1, dist2, combinations[i].smoothingValue).y);
+				break;
+			case COMBINE_TYPE_MIN:
+				distances[combinations[i].outIndex] = smin(dist1, dist2, combinations[i].smoothingValue).x;
+				colors[combinations[i].outIndex] = mix(color1, color2, smin(dist1, dist2, combinations[i].smoothingValue).y);
+				break;
+		}
+	}
+	return colors[0].xyz;
+
 }
 
 
