@@ -286,6 +286,10 @@ void main() {
 	vec3 lightDir = normalize(vec3(-0.5, 1, -0.3));
 	if(hit) {
 		float lightness = dot(normal, lightDir) * 0.5 + 0.5;
+		lightness = max(lightness, 0.1);
+		ray.direction =  lightDir;
+		ray.position += normal * 0.01;
+		rayHitInfo shadowInfo = march(ray);
 		vec3 col = sceneCol(ray.position);
 		vec3 viewDir = normalize(uCamPosition - ray.position);
 
@@ -293,12 +297,16 @@ void main() {
 
 		float shininess = 100;
 		float specularComponent = pow(max(dot(normal, halfDir), 0.0), shininess);
+		if(shadowInfo.hit){
+			specularComponent = 0.0;
+			lightness = 0.1;
+		}
 
 		FragColor = vec4(lightness * col + vec3(specularComponent), 1.0);
 	} else {
-		/*vec3 sun = vec3(pow(dot(ray.direction, lightDir) * 0.5 + 0.5, 100));
+		vec3 sun = vec3(pow(dot(ray.direction, lightDir) * 0.5 + 0.5, 100));
 		vec3 sky = vec3(0.5, 0.5, 0.9);
-		FragColor = vec4(sun + sky, 1.0);*/
-		FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+		FragColor = vec4(sun + sky, 1.0);
+		//FragColor = vec4(0.0, 0.0, 0.0, 1.0);
 	}
 }
