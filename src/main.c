@@ -169,7 +169,7 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 	//st->cam_pos = (vec3){1, 0, -3};
 	//st->cam_rotation = (vec3){-3.141/2 + 1, 0, 0};
 	//
-	st->cam_pos = (vec3){0, 0, -3};
+	st->cam_pos = (vec3){0, 0, -7};
 	st->cam_rotation = (vec3){0};
 
 	SDL_GL_SetSwapInterval(1);
@@ -268,32 +268,50 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 		vec4 color;
 		uint32_t type;
 	};
-	struct shape sp[3];
-	sp[0].transformation = m4_m4_mul(gen_translation_matrix((vec3){0, cos(time)*0, 0}), gen_rotation_matrix(time, time*2, 0));
+	struct shape sp[5];
+	sp[0].transformation = gen_translation_matrix((vec3){0, -200, 0});
 
-	sp[0].params[0] = 1;
-	sp[0].params[1] = 1;
-	sp[0].params[2] = 2;
-	sp[0].type = 1;
+	sp[0].params[0] = 198;
+	sp[0].type = 0;
 
 	sp[0].color = (vec3){1, 0, 0};
 
-	sp[1].transformation = gen_translation_matrix((vec3){0, -100, 0});
+	sp[1].transformation = m4_m4_mul(gen_translation_matrix((vec3){-3, 0, 0}), gen_rotation_matrix(0, 0, 0));
 
-	sp[1].params[0] = 98;
-	sp[1].type = 0;
+	sp[1].params[0] = 1;
+	sp[1].params[1] = 1;
+	sp[1].params[2] = 1;
+	sp[1].type = 1;
 
 	sp[1].color = (vec3){0, 1, 0};
 
-	sp[2].transformation = m4_m4_mul(gen_rotation_matrix(0, time*3, time), gen_translation_matrix((vec3){1, 0, 0}));
 
-	sp[2].params[0] = 0.7;
-	sp[2].params[1] = 0.5;
-	sp[2].type = 3;
+	sp[2].transformation = m4_m4_mul(gen_translation_matrix((vec3){-3 + sin(time) * 3, 0, 0}),gen_rotation_matrix(0, time*3, time));
 
-	sp[2].color = (vec3){0, 0, 1};
+	sp[2].params[0] = 0.5;
+	sp[2].params[1] = 0.2;
+	sp[2].type = 2;
 
-	int shape_count = 3;
+	sp[2].color = (vec3){0, 1, 1};
+
+	sp[3].transformation = m4_m4_mul(gen_translation_matrix((vec3){3, 0, 0}), gen_rotation_matrix(0, 3.141/2, 0));
+
+	sp[3].params[0] = 1;
+	sp[3].params[1] = 1;
+	sp[3].params[2] = 1;
+	sp[3].type = 3;
+
+	sp[3].color = (vec3){1, 1, 0};
+
+
+	sp[4].transformation = m4_m4_mul(gen_translation_matrix((vec3){3, 0, sin(time)*4}),gen_rotation_matrix(0, time*3, time));
+
+	sp[4].params[0] = 0.5;
+	sp[4].type = 0;
+
+	sp[4].color = (vec3){0, 0, 1};
+
+	int shape_count = 5;
 
 	glBindBuffer(GL_UNIFORM_BUFFER, st->shape_buffer);
 	glBufferSubData(GL_UNIFORM_BUFFER, (long)16, sizeof(struct shape) * shape_count, &sp);
