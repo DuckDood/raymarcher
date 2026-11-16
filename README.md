@@ -1,7 +1,7 @@
 # OpenGL ray marcher
 ## Ray marcher written in C, SDL, and OpenGL 3.3
 
-[!Hero screenshot of the program](screenshot.png)
+![Hero screenshot of the program](screenshot.png)
 
 ## Try it out
 
