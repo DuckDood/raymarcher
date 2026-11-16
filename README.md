@@ -25,4 +25,4 @@ This should create a binary in the build/ directory.
 This is a raymarcher that uses a signed distance field (SDF) to march along a ray's path until it collides with something. This allows you to really easily create boolean operations on shapes, and even use smooth versions of them as well. This also uses a system I created that lets you define combinations of objects as data, rather than hardcoding how objects should combine. It also creates shadows by sending a ray in the direction of the sun from the hit point of an object.
 
 ## AI use
-I only used AI a little bit for diagnosing performance issues when compiling to WebGL with the Emscripten build, and I might've (but I tried not to) get information from the AI overview on Google searches.
+I only used AI a little bit for diagnosing performance issues when compiling to WebGL with the Emscripten build, and I might've (but I tried not to have) gotten information from the AI overview on Google searches.
