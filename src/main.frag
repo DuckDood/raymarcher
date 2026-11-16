@@ -47,6 +47,7 @@ struct renderCombination {
 	float mult2;
 
 	uint materialCombination; // 0 for mixing, 1 for shape 1 color, 2 for shape 2 color
+	// also 3 for swapping the colors because why not
 
 	int outIndex; // index to output shape (0 for shape to render)
 };
@@ -131,7 +132,7 @@ layout (std140) uniform sph
 int renderCombinationCount = 3;
 renderCombination combinations[3] = renderCombination[3](
 		renderCombination(0, 1, COMBINE_TYPE_MIN, 0.5, 1.0, 1.0, 0u, 0),
-		renderCombination(toShapeCombineIndex(0), 2, COMBINE_TYPE_MAX, 0.5, 1.0, -1.0, 0u, 0),
+		renderCombination(toShapeCombineIndex(0), 2, COMBINE_TYPE_MAX, 0.5, 1.0, -1.0, 1u, 0),
 		renderCombination(toShapeCombineIndex(0), 2, COMBINE_TYPE_MIN, 0.0, 1.0, 1.0, 0u, 0)
 		);
 
@@ -237,6 +238,12 @@ vec3 sceneCol(vec3 position) {
 				break;
 			case 2u:
 				color1 = color2;
+				break;
+			case 3u:
+				vec4 colorTemp;
+				colorTemp = color1;
+				color1 = color2;
+				color2 = colorTemp;
 				break;
 		}
 
