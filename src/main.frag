@@ -25,7 +25,7 @@ struct camRay {
 };
 
 struct shape {
-	mat4 transformation;
+	mat4 inv_transformation;
 	vec4 params;
 	vec4 color;
 	uint type;
@@ -56,13 +56,13 @@ const uint COMBINE_TYPE_MIN = uint(0);
 const uint COMBINE_TYPE_MAX = uint(1);
 
 float getSphereDistance(vec3 position, shape object) {
-	return length((inverse(object.transformation) * vec4(position, 1.0)).xyz) - object.params.x;
+	return length((object.inv_transformation * vec4(position, 1.0)).xyz) - object.params.x;
 	//return length(vec4(position, 1.0).xyz) - object.params.x;
 }
 
 float getRectDistance(vec3 position, shape object) {
 	// general implementation from sebastian lague's video on ray marching
-	vec3 off = abs((inverse(object.transformation) * vec4(position, 1.0)).xyz) - object.params.xyz;
+	vec3 off = abs((object.inv_transformation * vec4(position, 1.0)).xyz) - object.params.xyz;
 
 	float unsignedDist = length(max(off, 0.0));
 
@@ -72,14 +72,14 @@ float getRectDistance(vec3 position, shape object) {
 }
 
 float getTorusDistance(vec3 position, shape object) {
-	vec3 p = (inverse(object.transformation) * vec4(position, 1.0)).xyz;
+	vec3 p = (object.inv_transformation * vec4(position, 1.0)).xyz;
 	// https://iquilezles.org/articles/distfunctions/
 	vec2 q = vec2(length(p.xz)-object.params.x,p.y);
 	return length(q)-object.params.y;
 }
 
 float getCylinderDistance(vec3 position, shape object) {
-	vec3 p = (inverse(object.transformation) * vec4(position, 1.0)).xyz;
+	vec3 p = (object.inv_transformation * vec4(position, 1.0)).xyz;
 	// https://iquilezles.org/articles/distfunctions/
 	vec2 d = abs(vec2(length(p.xz),p.y)) - vec2(object.params.x,object.params.y);
 	return min(max(d.x,d.y),0.0) + length(max(d,0.0));
