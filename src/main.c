@@ -38,7 +38,8 @@ struct progstate {
 	vec3 cam_pos;
 	vec3 cam_rotation; // 0,1,2 for pitch,yaw,roll
 
-	GLuint shape_buffer;
+	GLuint uniform_buffers[2];
+
 };
 
 SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unused]]char **argv) {
@@ -109,7 +110,6 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 	glEnableVertexAttribArray(0);
 
 
-
 	const char *vertex_shader_source = (const char[]){
 		#embed "main.vert"
 		,'\0'
@@ -136,12 +136,14 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 	if(!compile_status) {
 		glGetShaderInfoLog(vertex_shader, 512, NULL, info_log);
 		fprintf(stderr, "Failed to compile vertex shader:\n%s\n", info_log);
+		return SDL_APP_FAILURE;
 	}
 
 	glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &compile_status);
 	if(!compile_status) {
 		glGetShaderInfoLog(fragment_shader, 512, NULL, info_log);
 		fprintf(stderr, "Failed to compile fragment shader:\n%s\n", info_log);
+		return SDL_APP_FAILURE;
 	}
 
 	st->raymarch_prog = glCreateProgram();
@@ -161,14 +163,23 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 	glDeleteShader(fragment_shader);
 
 
-	glGenBuffers(1, &st->shape_buffer);
-	glBindBuffer(GL_UNIFORM_BUFFER, st->shape_buffer);
+	glGenBuffers(2, st->uniform_buffers);
+	glBindBuffer(GL_UNIFORM_BUFFER, st->uniform_buffers[0]);
 	glBufferData(GL_UNIFORM_BUFFER, 1024, NULL, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-	glUniformBlockBinding(st->raymarch_prog, glGetUniformBlockIndex(st->raymarch_prog, "sph"), 0);
+	glUniformBlockBinding(st->raymarch_prog, glGetUniformBlockIndex(st->raymarch_prog, "uShapes"), 0);
 
-	glBindBufferRange(GL_UNIFORM_BUFFER, 0, st->shape_buffer, 0, 1024);
+	glBindBufferRange(GL_UNIFORM_BUFFER, 0, st->uniform_buffers[0], 0, 1024);
+
+
+	glBindBuffer(GL_UNIFORM_BUFFER, st->uniform_buffers[1]);
+	glBufferData(GL_UNIFORM_BUFFER, 1024, NULL, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+	glUniformBlockBinding(st->raymarch_prog, glGetUniformBlockIndex(st->raymarch_prog, "uOperations"), 1);
+
+	glBindBufferRange(GL_UNIFORM_BUFFER, 1, st->uniform_buffers[1], 0, 1024);
 
 
 
@@ -328,9 +339,100 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 	int shape_count = 5;
 
 	uint64_t start_time = SDL_GetTicks();
-	glBindBuffer(GL_UNIFORM_BUFFER, st->shape_buffer);
+	glBindBuffer(GL_UNIFORM_BUFFER, st->uniform_buffers[0]);
 	glBufferSubData(GL_UNIFORM_BUFFER, (long)16, sizeof(struct shape) * shape_count, &sp);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(int), &shape_count);
+
+
+struct renderOperation {
+	// 0 0 0 0 0 0 0 0
+	// ^ ^-^ ^-^ ^ ^ ^
+	// t o-o b-b 1?2?
+	int operation; 
+	/*
+	   ** BYTE 1 **
+
+	   * first (highest) bit: type of operation (set distance or mix)
+	   * second and third highest bits: out index
+	   * fourth and fifth bits: do a boolean operation on either current value with first operand (if setting) or on each operand together (if mixing) boolean operations are clear (only for setting), union, difference, intersection
+	   * sixth bit: whether first operand is a shape or a distance.
+	   * seventh bit: whether second operand is a shape or a distance.	
+	   * eighth bit: whether this is a sized operation (meaning it will operate on more than 1 shape at once)
+
+	   ** BYTE 2 **
+
+	   * first and second bit: color mixing type (0 for mix, 1 for operand1 color, 2 for operand2 color)
+
+
+	   ** BYTE 3 AND 4 **
+	   * byte 3 is operand1 length
+	   * byte 4 is operand2 length
+	 */
+	// no ai used in this process i just wanted to make a useful comment for once
+
+	int operand1; // operand indices
+	int operand2; 
+
+	float smoothing;
+};
+
+#define highestBit8 (1 << 7)
+#define highestBits8 ((1 << 7) | (1<<6))
+#define opToByte(x) (x >> 24)
+
+#define paramsToOp(type, out, boolean, op1Type, op2Type, sized, mixType) (type << 31) | (out << 29) | (boolean << 27) | (op1Type << 26) | (op2Type << 25) | (sized << 24) | (mixType << 22)
+
+
+#define opType(x) ((opToByte(x) & highestBit8) >> 7)
+#define opOut(x) ((opToByte(x) & (highestBits8>>1)) >> 5)
+#define opBool(x) ((opToByte(x) & (highestBits8>>3)) >> 3)
+
+#define opOp1Type(x) ((opToByte(x) & (highestBit8>>5)) >> 2)
+#define opOp2Type(x) ((opToByte(x) & (highestBit8>>6)) >> 1)
+
+#define opSized(x) ((opToByte(x) & (highestBit8>>7)) >> 0)
+
+#define opMixType(x) ((opToByte((x<<8))&highestBits8)>>6)
+
+	struct renderOperation ops[5] = { 
+		{
+						paramsToOp(1, 2, 0, 0, 0, 1, 1),
+						1,
+						2,
+						0.5
+		},
+
+					{
+						paramsToOp(1, 3, 1, 0, 0, 1, 1),
+						3,
+						4,
+						0.2
+					},
+
+					{
+						paramsToOp(1, 0, 0, 1, 0, 1, 1),
+						3,
+						4,
+						0.0
+					},
+					{
+						paramsToOp(1, 0, 0, 1, 1, 1, 1),
+						0,
+						2,
+						0.0
+					},
+					{
+						paramsToOp(1, 0, 0, 1, 0, 1, 1),
+						0,
+						0,
+						0.0
+					},
+	};
+	int op_count = 5;
+
+	glBindBuffer(GL_UNIFORM_BUFFER, st->uniform_buffers[1]);
+	glBufferSubData(GL_UNIFORM_BUFFER, (long)16, sizeof(struct renderOperation) * op_count, &ops);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(int), &op_count);
 
 	glUseProgram(st->raymarch_prog);
 	glUniform1f(glGetUniformLocation(st->raymarch_prog, "uTime"), (float)time);

@@ -135,10 +135,16 @@ float getShapeDistance(vec3 position, shape object) {
 	return 0.0; // sigh
 }
 
-layout (std140) uniform sph
+layout (std140) uniform uShapes
 {
 	int shapeCount;
 	shape shapes[8];
+};
+
+layout (std140) uniform uOperations
+{
+	int opCount;
+	renderOperation operations[8];
 };
 
 
@@ -288,7 +294,7 @@ float distToScene(vec3 position) {
 #define opMixType(x) ((opToByte((x<<8))&highestBits8)>>6)
 
 
-	renderOperation ops[3] = renderOperation[3](
+	/*renderOperation ops[5] = renderOperation[5](
 					renderOperation(
 						paramsToOp(1, 2, 0, 0, 0, 1, 1),
 						1,
@@ -300,22 +306,33 @@ float distToScene(vec3 position) {
 						paramsToOp(1, 3, 1, 0, 0, 1, 1),
 						3,
 						4,
-						0.3
+						0.2
 						),
 
 					renderOperation(
-						paramsToOp(1, 0, 0, 1, 1, 1, 1),
-						2,
+						paramsToOp(1, 0, 0, 1, 0, 1, 1),
 						3,
-						0.5
+						4,
+						0.0
+						),
+					renderOperation(
+						paramsToOp(1, 0, 0, 1, 1, 1, 1),
+						0,
+						2,
+						0.0
+						),
+					renderOperation(
+						paramsToOp(1, 0, 0, 1, 0, 1, 1),
+						0,
+						0,
+						0.0
 						)
-			);
-	int opCount = 3;
+			);*/
 
 	float tempDist = 0.0;
 
 	for(int i = 0; i < opCount; i++) {
-		renderOperation op = ops[i];
+		renderOperation op = operations[i];
 		switch(opType(op.operation)) {
 			case 0: // set
 				switch(opOp1Type(op.operation)) {
