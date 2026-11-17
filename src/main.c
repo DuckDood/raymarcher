@@ -178,7 +178,7 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 	st->cam_pos = (vec3){0, 0, -7};
 	st->cam_rotation = (vec3){0};
 
-	SDL_GL_SetSwapInterval(1);
+	//SDL_GL_SetSwapInterval(1);
 	SDL_SetWindowRelativeMouseMode(st->window, 1);
 
 
@@ -327,6 +327,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
 	int shape_count = 5;
 
+	uint64_t start_time = SDL_GetTicks();
 	glBindBuffer(GL_UNIFORM_BUFFER, st->shape_buffer);
 	glBufferSubData(GL_UNIFORM_BUFFER, (long)16, sizeof(struct shape) * shape_count, &sp);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(int), &shape_count);
@@ -342,5 +343,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
 	SDL_GL_SwapWindow(st->window);
+
+	printf("render time: %ims\n", (int)(SDL_GetTicks()-start_time));
 	return SDL_APP_CONTINUE;
 }

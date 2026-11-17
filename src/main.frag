@@ -129,7 +129,7 @@ layout (std140) uniform sph
 
 #define toShapeCombineIndex(i) (i | (1<<31))
 
-int renderCombinationCount = 6;
+const int renderCombinationCount = 6;
 renderCombination combinations[6] = renderCombination[6](
 		// setup initialize scene
 		renderCombination(0, 0, COMBINE_TYPE_MIN, 0.0, 1.0, 1.0, 0u, 0),
