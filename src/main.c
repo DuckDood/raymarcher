@@ -32,6 +32,9 @@ struct progstate {
 
 	GLuint raymarch_prog;
 
+	int screen_width;
+	int screen_height;
+
 	vec3 cam_pos;
 	vec3 cam_rotation; // 0,1,2 for pitch,yaw,roll
 
@@ -48,6 +51,9 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 		return SDL_APP_FAILURE;
 	}
 
+	st->screen_width = WIDTH;
+	st->screen_height = HEIGHT;
+
 	if(!SDL_Init(SDL_INIT_VIDEO)) {
 		fprintf(stderr, "Failed to initialize SDL3: %s\n", SDL_GetError());
 		fflush(stderr);
@@ -57,7 +63,7 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 
-	st->window = SDL_CreateWindow("raymarcher", WIDTH, HEIGHT, SDL_WINDOW_OPENGL);
+	st->window = SDL_CreateWindow("raymarcher", WIDTH, HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
 	if(st->window == NULL) {
 		fprintf(stderr, "Failed to create SDL3 window: %s\n", SDL_GetError());
 		fflush(stderr);
@@ -217,6 +223,14 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 			if(st->cam_rotation[1] > 3.141/2) st->cam_rotation[1] = 3.141/2;
 			if(st->cam_rotation[1] < -3.141/2) st->cam_rotation[1] = -3.141/2;
 			break;
+
+		case SDL_EVENT_WINDOW_RESIZED:
+			st->screen_width = event->window.data1;
+			st->screen_height = event->window.data2;
+
+			glViewport(0, 0, st->screen_width, st->screen_height);
+
+			break;
 	}
 
 	return SDL_APP_CONTINUE;
@@ -319,7 +333,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
 	glUseProgram(st->raymarch_prog);
 	glUniform1f(glGetUniformLocation(st->raymarch_prog, "uTime"), (float)time);
-	glUniform2f(glGetUniformLocation(st->raymarch_prog, "uResolution"), WIDTH, HEIGHT);
+	glUniform2f(glGetUniformLocation(st->raymarch_prog, "uResolution"), st->screen_width, st->screen_height);
 	glUniform3fv(glGetUniformLocation(st->raymarch_prog, "uCamPosition"), 1, (GLfloat*)&st->cam_pos);
 	glUniformMatrix4fv(glGetUniformLocation(st->raymarch_prog, "uCamRotationMatrix"), 1, false, (GLfloat*)&rotation_matrix);
 
