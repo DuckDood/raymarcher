@@ -56,7 +56,7 @@ struct renderOperation {
 	// 0 0 0 0 0 0 0 0
 	// ^ ^-^ ^-^ ^ ^ ^
 	// t o-o b-b 1?2?
-	uint operation; 
+	int operation; 
 	/*
 	   ** BYTE 1 **
 
@@ -78,8 +78,8 @@ struct renderOperation {
 	 */
 	// no ai used in this process i just wanted to make a useful comment for once
 
-	uint operand1; // operand indices
-	uint operand2; 
+	int operand1; // operand indices
+	int operand2; 
 
 	float smoothing;
 };
@@ -248,7 +248,7 @@ float distToScene(vec3 position) {
 
 	   * first (highest) bit: type of operation (set distance or mix)
 	   * second and third highest bits: out index
-	   * fourth and fifth bits: do a boolean operation on either current value with first operand (if setting) or on each operand together (if mixing) boolean operations are clear (only for setting), union, difference, intersection
+	   * fourth and fifth bits: do a boolean operation each operand together (if mixing) boolean operations are union, difference, intersection
 	   * sixth bit: whether first operand is a shape or a distance.
 	   * seventh bit: whether second operand is a shape or a distance.	
 	   * eighth bit: whether this is a sized operation (meaning it will operate on more than 1 shape at once)
@@ -275,7 +275,6 @@ float distToScene(vec3 position) {
 
 #define paramsToOp(type, out, boolean, op1Type, op2Type, sized, mixType) (type << 31) | (out << 29) | (boolean << 27) | (op1Type << 26) | (op2Type << 25) | (sized << 24) | (mixType << 22)
 
-int x = paramsToOp(1, 1, 1, 1, 1, 1, 1);
 
 #define opType(x) ((opToByte(x) & highestBit8) >> 7)
 #define opOut(x) ((opToByte(x) & (highestBits8>>1)) >> 5)
@@ -289,10 +288,147 @@ int x = paramsToOp(1, 1, 1, 1, 1, 1, 1);
 #define opMixType(x) ((opToByte((x<<8))&highestBits8)>>6)
 
 
+	renderOperation ops[3] = renderOperation[3](
+					renderOperation(
+						paramsToOp(1, 2, 0, 0, 0, 1, 1),
+						1,
+						2,
+						0.5
+						),
+
+					renderOperation(
+						paramsToOp(1, 3, 1, 0, 0, 1, 1),
+						3,
+						4,
+						0.3
+						),
+
+					renderOperation(
+						paramsToOp(1, 0, 0, 1, 1, 1, 1),
+						2,
+						3,
+						0.5
+						)
+			);
+	int opCount = 3;
+
+	float tempDist = 0.0;
+
+	for(int i = 0; i < opCount; i++) {
+		renderOperation op = ops[i];
+		switch(opType(op.operation)) {
+			case 0: // set
+				switch(opOp1Type(op.operation)) {
+					case 0: // shape
+						tempDist = getShapeDistance(position, shapes[op.operand1]);
+						break;
+					case 1: // distance
+						switch(op.operand1) {
+							case 0:
+								 tempDist = distance0;
+								break;
+							case 1:
+								 tempDist = distance1;
+								break;
+							case 2:
+								 tempDist = distance2;
+								break;
+							case 3:
+								 tempDist = distance3;
+								break;
+						}
+						break;
+				}
+				break;
+			case 1: // mix
+				float dist1;
+				float dist2;
+				switch(opOp1Type(op.operation)) {
+					case 0: // shape
+						dist1 = getShapeDistance(position, shapes[op.operand1]);
+						break;
+					case 1: // distance
+						switch(op.operand1) {
+							case 0:
+								 dist1 = distance0;
+								break;
+							case 1:
+								 dist1 = distance1;
+								break;
+							case 2:
+								 dist1 = distance2;
+								break;
+							case 3:
+								 dist1 = distance3;
+								break;
+						}
+						//dist1 = distance2;
+						break;
+				}
+				switch(opOp2Type(op.operation)) {
+					case 0: // shape
+						dist2 = getShapeDistance(position, shapes[op.operand2]);
+						break;
+					case 1: // distance
+						switch(op.operand2) {
+							case 0:
+								 dist2 = distance0;
+								break;
+							case 1:
+								 dist2 = distance1;
+								break;
+							case 2:
+								 dist2 = distance2;
+								break;
+							case 3:
+								 dist2 = distance3;
+								break;
+						}
+						//dist2 = distance3;
+						break;
+				}
+				switch(opBool(op.operation)) {
+					case 0: // union
+						tempDist = smin(dist1, dist2, op.smoothing).x;
+						break;
+					case 1: // difference
+						tempDist = smax(dist1, -dist2, op.smoothing).x;
+						break;
+					case 2: // intersection
+						tempDist = smax(dist1, dist2, op.smoothing).x;
+						break;
+				}
+				break;
+		}
+
+		switch(opOut(op.operation)) {
+			case 0:
+				distance0 = tempDist;
+				break;
+			case 1:
+				distance1 = tempDist;
+				break;
+			case 2:
+				distance2 = tempDist;
+				break;
+			case 3:
+				distance3 = tempDist;
+				break;
+		}
+	}
+
+	return distance0;
+/*float smallestDist = 1000.0;
+for(int i = 0; i < shapeCount; i++) {
+	smallestDist = min(getShapeDistance(position, shapes[i]), smallestDist);
+}
+return smallestDist;*/
 
 
 
-	distance0 = getShapeDistance(position, shapes[1]);
+
+
+	/*distance0 = getShapeDistance(position, shapes[1]);
 	distance1 = getShapeDistance(position, shapes[2]);
 	distance0 = smin(distance0, distance1, 0.5).x;
 	distance1 = getShapeDistance(position, shapes[3]);
@@ -302,10 +438,13 @@ int x = paramsToOp(1, 1, 1, 1, 1, 1, 1);
 	distance0 = smin(distance0, distance1, 0.0).x;
 
 	distance1 = getShapeDistance(position, shapes[4]);
-	distance0 = smin(distance0, distance1, 0.0).x;
+	distance0 = smin(distance0, distance1, 0.0).x;*/
+
+	//distance0 = smin(distance2, distance3, 0.0).x;
 
 
-	return distance0;
+
+	//return distance0;
 
 	//return d;
 }
@@ -367,7 +506,6 @@ vec3 sceneCol(vec3 position) {
 		}
 	}
 	return colors[0].xyz;*/
-	int x = paramsToOp(1, 1, 1, 1, 1, 1, 1);
 
 	return vec3(1.0, 0.0, 0.0);
 
