@@ -291,7 +291,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
 	sp[2].color = (vec3){0, 1, 1};
 
-	sp[3].transformation = m4_m4_mul(gen_translation_matrix((vec3){3, 0, 0}), gen_rotation_matrix(0, 3.141/2, 0));
+	sp[3].transformation = m4_m4_mul(gen_scale_matrix((vec3){3, 1, 1}), gen_rotation_matrix(0, 3.141/2, 0));
 
 	sp[3].params[0] = 1;
 	sp[3].params[1] = 1;

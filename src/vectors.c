@@ -115,6 +115,30 @@ mat4 gen_rotation_matrix(float yaw, float pitch, float roll) {
 
 }
 
+mat4 gen_scale_matrix(vec3 scale) {
+	return construct_mat4_cm((float[16]){
+		scale[0],
+		0,
+		0,
+		0,
+
+		0,
+		scale[1],
+		0,
+		0,
+
+		0,
+		0,
+		scale[2],
+		0,
+
+		0,
+		0,
+		0,
+		1
+		});
+}
+
 mat4 gen_translation_matrix(vec3 pos) {
 	return construct_mat4_cm((float[16]){
 		1,
@@ -137,5 +161,4 @@ mat4 gen_translation_matrix(vec3 pos) {
 		pos[2],
 		1
 		});
-
 }
