@@ -273,7 +273,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
 	sp[0].color = (vec3){1, 0, 0};
 
-	sp[1].transformation = m4_m4_mul(gen_translation_matrix((vec3){-3, 0, 0}), gen_rotation_matrix(0, 0, 0));
+	sp[1].transformation = gen_transformation_matrix((vec3){-3, 0, 0}, (vec3){0}, (vec3){1,1,1});
 
 	sp[1].params[0] = 1;
 	sp[1].params[1] = 1;
@@ -283,7 +283,8 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 	sp[1].color = (vec3){0, 1, 0};
 
 
-	sp[2].transformation = m4_m4_mul(gen_translation_matrix((vec3){-3 + sin(time) * 3, 0, 0}),gen_rotation_matrix(0, time*3, time));
+	//sp[2].transformation = m4_m4_mul(gen_translation_matrix((vec3){-3 + sin(time) * 3, 0, 0}),gen_rotation_matrix(0, time*3, time));
+	sp[2].transformation = gen_transformation_matrix((vec3){-3 + sin(time) * 3, 0, 0}, (vec3){time*3, 0, time}, (vec3){1,1,1});
 
 	sp[2].params[0] = 0.5;
 	sp[2].params[1] = 0.2;
@@ -291,7 +292,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
 	sp[2].color = (vec3){0, 1, 1};
 
-	sp[3].transformation = m4_m4_mul(gen_scale_matrix((vec3){3, 1, 1}), gen_rotation_matrix(0, 3.141/2, 0));
+	sp[3].transformation = gen_transformation_matrix((vec3){3, 0, 0}, (vec3){3.14159/2, 0, 0}, (vec3){1,1,1});
 
 	sp[3].params[0] = 1;
 	sp[3].params[1] = 1;
@@ -301,7 +302,8 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 	sp[3].color = (vec3){1, 1, 0};
 
 
-	sp[4].transformation = m4_m4_mul(gen_translation_matrix((vec3){3, 0, sin(time)*4}),gen_rotation_matrix(0, time*3, time));
+	//sp[4].transformation = m4_m4_mul(gen_translation_matrix((vec3){3, 0, sin(time)*4}),gen_rotation_matrix(0, time*3, time));
+	sp[4].transformation = gen_transformation_matrix((vec3){3, 0, sin(time)*4}, (vec3){0}, (vec3){1,1,1});
 
 	sp[4].params[0] = 0.5;
 	sp[4].type = 0;

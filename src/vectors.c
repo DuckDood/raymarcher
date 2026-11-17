@@ -162,3 +162,12 @@ mat4 gen_translation_matrix(vec3 pos) {
 		1
 		});
 }
+
+mat4 gen_transformation_matrix(vec3 position, vec3 rotation, vec3 scale) {
+	return m4_m4_mul(gen_translation_matrix(position), m4_m4_mul(gen_rotation_matrix(rotation[1], rotation[0], rotation[2]), gen_scale_matrix(scale)));
+}
+
+mat4 gen_inverse_transformation_matrix(vec3 position, vec3 rotation, vec3 scale) {
+	//return m4_m4_mul(gen_translation_matrix(position), m4_m4_mul(gen_rotation_matrix(rotation[1], rotation[0], rotation[2]), gen_scale_matrix(scale)));
+	return m4_m4_mul(gen_scale_matrix(1/scale), m4_m4_mul(transpose(gen_rotation_matrix(rotation[1], rotation[0], rotation[2])), gen_translation_matrix(-position)));
+}

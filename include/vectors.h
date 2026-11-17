@@ -32,3 +32,9 @@ mat4 construct_mat4_rm(float array[16]);
 mat4 gen_rotation_matrix(float yaw, float pitch, float roll);
 mat4 gen_scale_matrix(vec3 scale);
 mat4 gen_translation_matrix(vec3 pos);
+
+// Position, rotation (in pitch, yaw, roll/XYZ order), and scale.
+mat4 gen_transformation_matrix(vec3 position, vec3 rotation, vec3 scale);
+
+// arguably more useful
+mat4 gen_inverse_transformation_matrix(vec3 position, vec3 rotation, vec3 scale);
