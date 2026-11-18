@@ -197,7 +197,6 @@ vec2 smax( float a, float b, float k ) { // from https://iquilezles.org/articles
 }
 
 float distToScene(vec3 position) {
-	vec4 distances = vec4(0.0);
 
 #define highestBit8 (1 << 7)
 #define highestBits8 ((1 << 7) | (1<<6))
@@ -217,18 +216,14 @@ float distToScene(vec3 position) {
 
 #define opMixType(x) ((opToByte((x<<8))&highestBits8)>>6)
 
+	vec4 distances = vec4(0.0);
+
 
 	float tempDist = 0.0;
 
 	for(int i = 0; i < opCount; i++) {
 		renderOperation op = operations[i];
 
-		/*vec4 operand1 = vec4(float(op.operand1 == 0), float(op.operand1 == 1), float(op.operand1 == 2), float(op.operand1 == 3));
-		vec4 operand2 = vec4(float(op.operand2 == 0), float(op.operand2 == 1), float(op.operand2 == 2), float(op.operand2 == 3));
-		int outInd = opOut(op.operation);
-		vec4 outVec = vec4(float(outInd == 0), float(outInd == 1), float(outInd == 2), float(outInd == 3));*/
-		//vec4 distances = vec4(distance0, distance1, distance2, distance3);
-		
 		ivec4 eqVec = ivec4(0, 1, 2, 3);
 
 		vec4 operand1 = vec4(equal(ivec4(op.operand1), eqVec));
@@ -288,7 +283,73 @@ float distToScene(vec3 position) {
 }
 
 vec3 sceneCol(vec3 position) {
-	return vec3(1.0, 0.0, 0.0);
+	vec4 distances = vec4(0.0);
+
+	vec3 colors[4];
+
+
+	float tempDist = 0.0;
+	vec3 tempCol;
+
+	for(int i = 0; i < opCount; i++) {
+		renderOperation op = operations[i];
+
+		ivec4 eqVec = ivec4(0, 1, 2, 3);
+
+		vec4 operand1 = vec4(equal(ivec4(op.operand1), eqVec));
+		vec4 operand2 = vec4(equal(ivec4(op.operand2), eqVec));
+
+
+		vec4 outVec = vec4(equal(ivec4(opOut(op.operation)), eqVec));
+
+		float dist1;
+		float dist2;
+
+		vec3 col1;
+		vec3 col2;
+		switch(opOp1Type(op.operation)) {
+			case 0: // shape
+				dist1 = getShapeDistance(position, shapes[op.operand1]);
+				col1 = shapes[op.operand1].color.xyz;
+				break;
+			case 1: // distance
+				dist1 = dot(distances, operand1);
+				col1 = colors[op.operand1];
+				break;
+		}
+		switch(opOp2Type(op.operation)) {
+			case 0: // shape
+				dist2 = getShapeDistance(position, shapes[op.operand2]);
+				col2 = shapes[op.operand2].color.xyz;
+				break;
+			case 1: // distance
+				dist2 = dot(distances, operand2);
+				col2 = colors[op.operand2];
+				break;
+		}
+		switch(opBool(op.operation)) {
+			case 0: // union
+				tempDist = smin(dist1, dist2, op.smoothing).x;
+				tempCol = mix(col1, col2, smin(dist1, dist2, op.smoothing).y);
+				break;
+			case 1: // difference
+				tempDist = smax(dist1, -dist2, op.smoothing).x;
+				tempCol = mix(col1, col2, smax(dist1, -dist2, op.smoothing).y);
+				break;
+			case 2: // intersection
+				tempDist = smax(dist1, dist2, op.smoothing).x;
+				tempCol = mix(col1, col2, smax(dist1, dist2, op.smoothing).y);
+				break;
+		}
+
+		distances *= (1.0-outVec);
+		distances += outVec * tempDist;
+
+		colors[opOut(op.operation)] = tempCol;
+	}
+
+	//return distances.x;
+	return colors[0];
 }
 
 
