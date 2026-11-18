@@ -528,16 +528,25 @@ vec3 getNormal(float distPosX, float distNegX, float distPosY, float distNegY, f
 	return normalize(vec3(distPosX-distNegX, distPosY-distNegY, distPosZ-distNegZ));
 }
 
+vec3 getNormalFromPos(vec3 position, float dist, float step) {
+			float distToShapePosX = distToScene(position + vec3(step, 0.0, 0.0));
+			float distToShapePosY = distToScene(position + vec3(0.0, step, 0.0));
+			float distToShapePosZ = distToScene(position + vec3(0.0, 0.0, step));
+
+			return getNormal(distToShapePosX, dist, distToShapePosY, dist, distToShapePosZ, dist);
+}
+
 struct rayHitInfo {
 	vec3 position;
-	vec3 normal;
+	float finalDist;
 	bool hit;
 };
 
+
 rayHitInfo march(camRay ray) {
 	bool hit = false;
-	vec3 normal = vec3(0);
 	int step_count = 0;
+	float finalDist = 0.0;
 	float belowHit = 0.001;
 	for(; true; step_count++) {
 		/*if(step_count > 127) {
@@ -549,7 +558,7 @@ rayHitInfo march(camRay ray) {
 		if(dist < belowHit) {
 			hit = true;
 
-			float step = 0.001;
+			/*float step = 0.001;
 			float distToShapePosX = distToScene(ray.position + vec3(step, 0.0, 0.0));
 			float distToShapePosY = distToScene(ray.position + vec3(0.0, step, 0.0));
 			float distToShapePosZ = distToScene(ray.position + vec3(0.0, 0.0, step));
@@ -560,8 +569,9 @@ rayHitInfo march(camRay ray) {
 
 
 			//normal = getNormal(distToShapePosX, distToShapeNegX, distToShapePosY, distToShapeNegY, distToShapePosZ, distToShapeNegZ);
-			normal = getNormal(distToShapePosX, dist, distToShapePosY, dist, distToShapePosZ, dist);
+			//normal = getNormal(distToShapePosX, dist, distToShapePosY, dist, distToShapePosZ, dist);*/
 			//t = distToShapeFactor;
+			finalDist = dist;
 			break;
 		}
 		if(dist > 100.0) {
@@ -577,7 +587,7 @@ rayHitInfo march(camRay ray) {
 	rayHitInfo info;
 	info.hit = hit;
 	info.position = ray.position;
-	info.normal = normal;
+	info.finalDist = finalDist;
 
 	return info;
 }
@@ -624,7 +634,7 @@ void main() {
 
 	rayHitInfo info = march(ray);
 	ray.position = info.position;
-	vec3 normal = info.normal;
+	vec3 normal = getNormalFromPos(info.position, info.finalDist, 0.001);
 	bool hit = info.hit;
 
 	vec3 lightDir = normalize(vec3(-0.5, 1, -0.3));
