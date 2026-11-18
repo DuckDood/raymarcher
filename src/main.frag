@@ -197,85 +197,7 @@ vec2 smax( float a, float b, float k ) { // from https://iquilezles.org/articles
 }
 
 float distToScene(vec3 position) {
-	//float dist = 1000.0;
-	/*for(int i = 0; i < renderCombinationCount; i++) {
-		switch(combinations[i].type) {
-			case COMBINE_TYPE_MIN:
-				float dist1 = getShapeDistance(position, shapes[combinations[i].index1]);
-				float dist2 = getShapeDistance(position, shapes[combinations[i].index2]);
-				dist = smin(dist1, dist2, combinations[i].smoothingValue).x;
-				break;
-		}
-	}*/
-	/*for(int i = 0; i < shapeCount; i++) {
-		dist = min(dist, getShapeDistance(position, shapes[i]));
-	}*/
-	/*float distances[8]; // for some reason when this gets bigger it really slows down webgl
-	int distanceTop = 0;
-	for(int i = 0; i < renderCombinationCount; i++) {
-		int bitwiseFactor = 1 << 31;
-
-		bool indexAlreadyCombined1 = (combinations[i].index1 & bitwiseFactor) != 0;
-		bool indexAlreadyCombined2 = (combinations[i].index2 & bitwiseFactor) != 0;
-
-		int index1 = combinations[i].index1 & (~bitwiseFactor);
-		int index2 = combinations[i].index2 & (~bitwiseFactor);
-
-		float dist1, dist2;
-		if(!indexAlreadyCombined1) {
-			dist1 = getShapeDistance(position, shapes[index1]) * combinations[i].mult1;
-		} else {
-			dist1 = distances[index1] * combinations[i].mult1;
-		}
-
-		if(!indexAlreadyCombined2) {
-			dist2 = getShapeDistance(position, shapes[index2]) * combinations[i].mult2;
-		} else {
-			dist2 = distances[index2] * combinations[i].mult2;
-		}
-
-		switch(combinations[i].type) {
-			case COMBINE_TYPE_MAX:
-				distances[combinations[i].outIndex] = smax(dist1, dist2, combinations[i].smoothingValue).x;
-				break;
-			case COMBINE_TYPE_MIN:
-				distances[combinations[i].outIndex] = smin(dist1, dist2, combinations[i].smoothingValue).x;
-				break;
-		}
-	}
-	return distances[0];*/
-	/*float distance0;
-	float distance1;
-	float distance2;
-	float distance3;*/
 	vec4 distances = vec4(0.0);
-
-	/*
-	   ** BYTE 1 **
-
-	   //* first (highest) bit: type of operation (set distance or mix)
-	   // just realized thats useless (you can set it by mixing the same thing with itslef)
-	   * second and third highest bits: out index
-	   * fourth and fifth bits: do a boolean operation each operand together (if mixing) boolean operations are union, difference, intersection
-	   * sixth bit: whether first operand is a shape or a distance.
-	   * seventh bit: whether second operand is a shape or a distance.	
-	   * eighth bit: whether this is a sized operation (meaning it will operate on more than 1 shape at once)
-
-	   ** BYTE 2 **
-
-	   * first and second bit: color mixing type (0 for mix, 1 for operand1 color, 2 for operand2 color)
-
-
-	   ** BYTE 3 AND 4 **
-	   * byte 3 is operand1 length
-	   * byte 4 is operand2 length
-	 */
-
-/*#define highestBit (1<<31)
-#define highestBit2 ((1<<31) | (1<<30))
-#define opType(x) (highestBit & x) >> 31
-#define opOut(x) ((highestBit2>>1) & x) >> 29
-#define opBool(x) ((highestBit2>>3) & x) >> 27*/
 
 #define highestBit8 (1 << 7)
 #define highestBits8 ((1 << 7) | (1<<6))
@@ -295,41 +217,6 @@ float distToScene(vec3 position) {
 
 #define opMixType(x) ((opToByte((x<<8))&highestBits8)>>6)
 
-
-	/*renderOperation ops[5] = renderOperation[5](
-					renderOperation(
-						paramsToOp(1, 2, 0, 0, 0, 1, 1),
-						1,
-						2,
-						0.5
-						),
-
-					renderOperation(
-						paramsToOp(1, 3, 1, 0, 0, 1, 1),
-						3,
-						4,
-						0.2
-						),
-
-					renderOperation(
-						paramsToOp(1, 0, 0, 1, 0, 1, 1),
-						3,
-						4,
-						0.0
-						),
-					renderOperation(
-						paramsToOp(1, 0, 0, 1, 1, 1, 1),
-						0,
-						2,
-						0.0
-						),
-					renderOperation(
-						paramsToOp(1, 0, 0, 1, 0, 1, 1),
-						0,
-						0,
-						0.0
-						)
-			);*/
 
 	float tempDist = 0.0;
 
@@ -357,21 +244,6 @@ float distToScene(vec3 position) {
 				dist1 = getShapeDistance(position, shapes[op.operand1]);
 				break;
 			case 1: // distance
-				/*switch(op.operand1) {
-					case 0:
-						dist1 = distance0;
-						break;
-					case 1:
-						dist1 = distance1;
-						break;
-					case 2:
-						dist1 = distance2;
-						break;
-					case 3:
-						dist1 = distance3;
-						break;
-				}*/
-				//dist1 = distance2;
 				dist1 = dot(distances, operand1);
 				break;
 		}
@@ -380,22 +252,7 @@ float distToScene(vec3 position) {
 				dist2 = getShapeDistance(position, shapes[op.operand2]);
 				break;
 			case 1: // distance
-				/*switch(op.operand2) {
-					case 0:
-						dist2 = distance0;
-						break;
-					case 1:
-						dist2 = distance1;
-						break;
-					case 2:
-						dist2 = distance2;
-						break;
-					case 3:
-						dist2 = distance3;
-						break;
-				}*/
 				dist2 = dot(distances, operand2);
-				//dist2 = distance3;
 				break;
 		}
 		switch(opBool(op.operation)) {
@@ -410,36 +267,11 @@ float distToScene(vec3 position) {
 				break;
 		}
 
-		/*switch(opOut(op.operation)) {
-			case 0:
-				distances.x = tempDist;
-				break;
-			case 1:
-				distances.y = tempDist;
-				break;
-			case 2:
-				distances.z = tempDist;
-				break;
-			case 3:
-				distances.w = tempDist;
-				break;
-		}*/
-
 		distances *= (1.0-outVec);
 		distances += outVec * tempDist;
 	}
 
 	return distances.x;
-/*float smallestDist = 1000.0;
-for(int i = 0; i < shapeCount; i++) {
-	smallestDist = min(getShapeDistance(position, shapes[i]), smallestDist);
-}
-return smallestDist;*/
-
-
-
-
-
 	/*distance0 = getShapeDistance(position, shapes[1]);
 	distance1 = getShapeDistance(position, shapes[2]);
 	distance0 = smin(distance0, distance1, 0.5).x;
@@ -453,74 +285,10 @@ return smallestDist;*/
 	distance0 = smin(distance0, distance1, 0.0).x;*/
 
 	//distance0 = smin(distance2, distance3, 0.0).x;
-
-
-
-	//return distance0;
-
-	//return d;
 }
 
 vec3 sceneCol(vec3 position) {
-	/*vec4 colors[8];
-	float distances[8];
-	for(int i = 0; i < renderCombinationCount; i++) {
-		int bitwiseFactor = 1 << 31;
-
-		bool indexAlreadyCombined1 = (combinations[i].index1 & bitwiseFactor) != 0;
-		bool indexAlreadyCombined2 = (combinations[i].index2 & bitwiseFactor) != 0;
-
-		int index1 = combinations[i].index1 & (~bitwiseFactor);
-		int index2 = combinations[i].index2 & (~bitwiseFactor);
-
-		float dist1, dist2;
-		vec4 color1, color2;
-		if(!indexAlreadyCombined1) {
-			dist1 = getShapeDistance(position, shapes[index1]) * combinations[i].mult1;
-			color1 = shapes[index1].color;
-		} else {
-			dist1 = distances[index1] * combinations[i].mult1;
-			color1 = colors[index1];
-		}
-
-		if(!indexAlreadyCombined2) {
-			dist2 = getShapeDistance(position, shapes[index2]) * combinations[i].mult2;
-			color2 = shapes[index2].color;
-		} else {
-			dist2 = distances[index2] * combinations[i].mult2;
-			color2 = colors[index2];
-		}
-
-		switch(combinations[i].materialCombination) {
-			case 1u:
-				color2 = color1;
-				break;
-			case 2u:
-				color1 = color2;
-				break;
-			case 3u:
-				vec4 colorTemp;
-				colorTemp = color1;
-				color1 = color2;
-				color2 = colorTemp;
-				break;
-	;	}
-
-		switch(combinations[i].type) {
-			case COMBINE_TYPE_MAX:
-				distances[combinations[i].outIndex] = smax(dist1, dist2, combinations[i].smoothingValue).x;
-				colors[combinations[i].outIndex] = mix(color1, color2, smax(dist1, dist2, combinations[i].smoothingValue).y);
-				break;
-			case COMBINE_TYPE_MIN:
-				distances[combinations[i].outIndex] = smin(dist1, dist2, combinations[i].smoothingValue).x;
-				colors[combinations[i].outIndex] = mix(color1, color2, smin(dist1, dist2, combinations[i].smoothingValue).y);
-				break;
-		}
-	}
-	return colors[0].xyz;*/
-
 	return vec3(1.0, 0.0, 0.0);
-
 }
 
 
