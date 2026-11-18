@@ -244,15 +244,17 @@ float distToScene(vec3 position) {
 		}
 	}
 	return distances[0];*/
-	float distance0;
+	/*float distance0;
 	float distance1;
 	float distance2;
-	float distance3;
+	float distance3;*/
+	vec4 distances = vec4(0.0);
 
 	/*
 	   ** BYTE 1 **
 
-	   * first (highest) bit: type of operation (set distance or mix)
+	   //* first (highest) bit: type of operation (set distance or mix)
+	   // just realized thats useless (you can set it by mixing the same thing with itslef)
 	   * second and third highest bits: out index
 	   * fourth and fifth bits: do a boolean operation each operand together (if mixing) boolean operations are union, difference, intersection
 	   * sixth bit: whether first operand is a shape or a distance.
@@ -333,108 +335,87 @@ float distToScene(vec3 position) {
 
 	for(int i = 0; i < opCount; i++) {
 		renderOperation op = operations[i];
-		switch(opType(op.operation)) {
-			case 0: // set
-				switch(opOp1Type(op.operation)) {
-					case 0: // shape
-						tempDist = getShapeDistance(position, shapes[op.operand1]);
-						break;
-					case 1: // distance
-						switch(op.operand1) {
-							case 0:
-								 tempDist = distance0;
-								break;
-							case 1:
-								 tempDist = distance1;
-								break;
-							case 2:
-								 tempDist = distance2;
-								break;
-							case 3:
-								 tempDist = distance3;
-								break;
-						}
-						break;
-				}
+
+		vec4 operand1 = vec4(float(op.operand1 == 0), float(op.operand1 == 1), float(op.operand1 == 2), float(op.operand1 == 3));
+		vec4 operand2 = vec4(float(op.operand2 == 0), float(op.operand2 == 1), float(op.operand2 == 2), float(op.operand2 == 3));
+		//vec4 distances = vec4(distance0, distance1, distance2, distance3);
+		float dist1;
+		float dist2;
+		switch(opOp1Type(op.operation)) {
+			case 0: // shape
+				dist1 = getShapeDistance(position, shapes[op.operand1]);
 				break;
-			case 1: // mix
-				float dist1;
-				float dist2;
-				switch(opOp1Type(op.operation)) {
-					case 0: // shape
-						dist1 = getShapeDistance(position, shapes[op.operand1]);
+			case 1: // distance
+				/*switch(op.operand1) {
+					case 0:
+						dist1 = distance0;
 						break;
-					case 1: // distance
-						switch(op.operand1) {
-							case 0:
-								 dist1 = distance0;
-								break;
-							case 1:
-								 dist1 = distance1;
-								break;
-							case 2:
-								 dist1 = distance2;
-								break;
-							case 3:
-								 dist1 = distance3;
-								break;
-						}
-						//dist1 = distance2;
+					case 1:
+						dist1 = distance1;
 						break;
-				}
-				switch(opOp2Type(op.operation)) {
-					case 0: // shape
-						dist2 = getShapeDistance(position, shapes[op.operand2]);
+					case 2:
+						dist1 = distance2;
 						break;
-					case 1: // distance
-						switch(op.operand2) {
-							case 0:
-								 dist2 = distance0;
-								break;
-							case 1:
-								 dist2 = distance1;
-								break;
-							case 2:
-								 dist2 = distance2;
-								break;
-							case 3:
-								 dist2 = distance3;
-								break;
-						}
-						//dist2 = distance3;
+					case 3:
+						dist1 = distance3;
 						break;
-				}
-				switch(opBool(op.operation)) {
-					case 0: // union
-						tempDist = smin(dist1, dist2, op.smoothing).x;
+				}*/
+				//dist1 = distance2;
+				dist1 = dot(distances, operand1);
+				break;
+		}
+		switch(opOp2Type(op.operation)) {
+			case 0: // shape
+				dist2 = getShapeDistance(position, shapes[op.operand2]);
+				break;
+			case 1: // distance
+				/*switch(op.operand2) {
+					case 0:
+						dist2 = distance0;
 						break;
-					case 1: // difference
-						tempDist = smax(dist1, -dist2, op.smoothing).x;
+					case 1:
+						dist2 = distance1;
 						break;
-					case 2: // intersection
-						tempDist = smax(dist1, dist2, op.smoothing).x;
+					case 2:
+						dist2 = distance2;
 						break;
-				}
+					case 3:
+						dist2 = distance3;
+						break;
+				}*/
+				dist2 = dot(distances, operand2);
+				//dist2 = distance3;
+				break;
+		}
+		switch(opBool(op.operation)) {
+			case 0: // union
+				tempDist = smin(dist1, dist2, op.smoothing).x;
+				break;
+			case 1: // difference
+				tempDist = smax(dist1, -dist2, op.smoothing).x;
+				break;
+			case 2: // intersection
+				tempDist = smax(dist1, dist2, op.smoothing).x;
 				break;
 		}
 
 		switch(opOut(op.operation)) {
 			case 0:
-				distance0 = tempDist;
+				distances.x = tempDist;
 				break;
 			case 1:
-				distance1 = tempDist;
+				distances.y = tempDist;
 				break;
 			case 2:
-				distance2 = tempDist;
+				distances.z = tempDist;
 				break;
 			case 3:
-				distance3 = tempDist;
+				distances.w = tempDist;
 				break;
 		}
 	}
 
-	return distance0;
+	return distances.x;
 /*float smallestDist = 1000.0;
 for(int i = 0; i < shapeCount; i++) {
 	smallestDist = min(getShapeDistance(position, shapes[i]), smallestDist);

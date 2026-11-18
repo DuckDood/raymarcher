@@ -394,39 +394,40 @@ struct renderOperation {
 
 #define opMixType(x) ((opToByte((x<<8))&highestBits8)>>6)
 
+
 	struct renderOperation ops[5] = { 
 		{
-						paramsToOp(1, 2, 0, 0, 0, 1, 1),
-						1,
-						2,
-						0.5
+			paramsToOp(1, 2, 0, 0, 0, 1, 1),
+			1,
+			2,
+			0.5
 		},
 
-					{
-						paramsToOp(1, 3, 1, 0, 0, 1, 1),
-						3,
-						4,
-						0.2
-					},
+		{
+			paramsToOp(1, 3, 1, 0, 0, 1, 1),
+			3,
+			4,
+			0.2
+		},
 
-					{
-						paramsToOp(1, 0, 0, 1, 0, 1, 1),
-						3,
-						4,
-						0.0
-					},
-					{
-						paramsToOp(1, 0, 0, 1, 1, 1, 1),
-						0,
-						2,
-						0.0
-					},
-					{
-						paramsToOp(1, 0, 0, 1, 0, 1, 1),
-						0,
-						0,
-						0.0
-					},
+		{
+			paramsToOp(1, 0, 0, 1, 0, 1, 1),
+			3,
+			4,
+			0.0
+		},
+		{
+			paramsToOp(1, 0, 0, 1, 1, 1, 1),
+			0,
+			2,
+			0.0
+		},
+		{
+			paramsToOp(1, 0, 0, 1, 0, 1, 1),
+			0,
+			0,
+			0.0
+		},
 	};
 	int op_count = 5;
 
