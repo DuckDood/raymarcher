@@ -336,9 +336,20 @@ float distToScene(vec3 position) {
 	for(int i = 0; i < opCount; i++) {
 		renderOperation op = operations[i];
 
-		vec4 operand1 = vec4(float(op.operand1 == 0), float(op.operand1 == 1), float(op.operand1 == 2), float(op.operand1 == 3));
+		/*vec4 operand1 = vec4(float(op.operand1 == 0), float(op.operand1 == 1), float(op.operand1 == 2), float(op.operand1 == 3));
 		vec4 operand2 = vec4(float(op.operand2 == 0), float(op.operand2 == 1), float(op.operand2 == 2), float(op.operand2 == 3));
+		int outInd = opOut(op.operation);
+		vec4 outVec = vec4(float(outInd == 0), float(outInd == 1), float(outInd == 2), float(outInd == 3));*/
 		//vec4 distances = vec4(distance0, distance1, distance2, distance3);
+		
+		ivec4 eqVec = ivec4(0, 1, 2, 3);
+
+		vec4 operand1 = vec4(equal(ivec4(op.operand1), eqVec));
+		vec4 operand2 = vec4(equal(ivec4(op.operand2), eqVec));
+
+
+		vec4 outVec = vec4(equal(ivec4(opOut(op.operation)), eqVec));
+
 		float dist1;
 		float dist2;
 		switch(opOp1Type(op.operation)) {
@@ -399,7 +410,7 @@ float distToScene(vec3 position) {
 				break;
 		}
 
-		switch(opOut(op.operation)) {
+		/*switch(opOut(op.operation)) {
 			case 0:
 				distances.x = tempDist;
 				break;
@@ -412,7 +423,10 @@ float distToScene(vec3 position) {
 			case 3:
 				distances.w = tempDist;
 				break;
-		}
+		}*/
+
+		distances *= (1.0-outVec);
+		distances += outVec * tempDist;
 	}
 
 	return distances.x;
@@ -524,11 +538,15 @@ rayHitInfo march(camRay ray) {
 	bool hit = false;
 	vec3 normal = vec3(0);
 	int step_count = 0;
+	float belowHit = 0.001;
 	for(; true; step_count++) {
-		//if(step_count > 500) break;
+		/*if(step_count > 127) {
+			belowHit = 0.01;
+		}*/
+		belowHit = float(step_count) / 12700.f + 0.001;
 		float dist = distToScene(ray.position);
 
-		if(dist < 0.001) {
+		if(dist < belowHit) {
 			hit = true;
 
 			float step = 0.001;
@@ -548,6 +566,9 @@ rayHitInfo march(camRay ray) {
 		if(dist > 100.0) {
 			break;
 		}
+		/*if(step_count > 127) {
+			break;
+		}*/
 
 		ray.position += ray.direction * dist;
 	}
