@@ -554,12 +554,13 @@ rayHitInfo march(camRay ray) {
 			float distToShapePosY = distToScene(ray.position + vec3(0.0, step, 0.0));
 			float distToShapePosZ = distToScene(ray.position + vec3(0.0, 0.0, step));
 
-			float distToShapeNegX = distToScene(ray.position - vec3(step, 0.0, 0.0));
+			/*float distToShapeNegX = distToScene(ray.position - vec3(step, 0.0, 0.0));
 			float distToShapeNegY = distToScene(ray.position - vec3(0.0, step, 0.0));
-			float distToShapeNegZ = distToScene(ray.position - vec3(0.0, 0.0, step));
+			float distToShapeNegZ = distToScene(ray.position - vec3(0.0, 0.0, step));*/
 
 
-			normal = getNormal(distToShapePosX, distToShapeNegX, distToShapePosY, distToShapeNegY, distToShapePosZ, distToShapeNegZ);
+			//normal = getNormal(distToShapePosX, distToShapeNegX, distToShapePosY, distToShapeNegY, distToShapePosZ, distToShapeNegZ);
+			normal = getNormal(distToShapePosX, dist, distToShapePosY, dist, distToShapePosZ, dist);
 			//t = distToShapeFactor;
 			break;
 		}
