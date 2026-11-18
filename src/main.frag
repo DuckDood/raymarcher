@@ -327,6 +327,14 @@ vec3 sceneCol(vec3 position) {
 				col2 = colors[op.operand2];
 				break;
 		}
+		switch(opMixType(op.operation)) {
+			case 1:
+				col2 = col1;
+				break;
+			case 2:
+				col1 = col2;
+				break;
+		}
 		switch(opBool(op.operation)) {
 			case 0: // union
 				tempDist = smin(dist1, dist2, op.smoothing).x;

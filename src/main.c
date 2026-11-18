@@ -397,7 +397,7 @@ struct renderOperation {
 
 	struct renderOperation ops[5] = { 
 		{
-			paramsToOp(1, 2, 0, 0, 0, 1, 1),
+			paramsToOp(1, 2, 0, 0, 0, 1, 0),
 			1,
 			2,
 			0.5
@@ -411,19 +411,19 @@ struct renderOperation {
 		},
 
 		{
-			paramsToOp(1, 0, 0, 1, 0, 1, 1),
+			paramsToOp(1, 0, 0, 1, 0, 1, 0),
 			3,
 			4,
 			0.0
 		},
 		{
-			paramsToOp(1, 0, 0, 1, 1, 1, 1),
+			paramsToOp(1, 0, 0, 1, 1, 1, 0),
 			0,
 			2,
 			0.0
 		},
 		{
-			paramsToOp(1, 0, 0, 1, 0, 1, 1),
+			paramsToOp(1, 0, 0, 1, 0, 1, 0),
 			0,
 			0,
 			0.0
