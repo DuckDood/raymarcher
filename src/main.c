@@ -40,6 +40,9 @@ struct progstate {
 
 	GLuint uniform_buffers[2];
 
+	GLuint grid_texture;
+	GLuint grid_program;
+
 };
 
 SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unused]]char **argv) {
@@ -162,6 +165,35 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 	glDeleteShader(vertex_shader);
 	glDeleteShader(fragment_shader);
 
+	const char *compute_shader_source = (const char[]){
+		#embed "main.comp"
+		,'\0'
+	};
+	GLuint grid_compute = glCreateShader(GL_COMPUTE_SHADER);
+
+	glShaderSource(grid_compute, 1, &compute_shader_source, NULL);
+	glCompileShader(grid_compute);
+
+	glGetShaderiv(grid_compute, GL_COMPILE_STATUS, &compile_status);
+	if(!compile_status) {
+		glGetShaderInfoLog(grid_compute, 512, NULL, info_log);
+		fprintf(stderr, "Failed to compile compute shader:\n%s\n", info_log);
+		return SDL_APP_FAILURE;
+	}
+
+	st->grid_program = glCreateProgram();
+	glAttachShader(st->grid_program, grid_compute);
+
+	glLinkProgram(st->grid_program);
+
+	glGetProgramiv(st->grid_program, GL_LINK_STATUS, &compile_status);
+
+	if(!compile_status) {
+		glGetProgramInfoLog(st->grid_program, 512, NULL, info_log);
+		fprintf(stderr, "Failed to link compute program:\n%s\n", info_log);
+	}
+	glDeleteShader(grid_compute);
+
 
 	glGenBuffers(2, st->uniform_buffers);
 	glBindBuffer(GL_UNIFORM_BUFFER, st->uniform_buffers[0]);
@@ -169,6 +201,8 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 	glUniformBlockBinding(st->raymarch_prog, glGetUniformBlockIndex(st->raymarch_prog, "uShapes"), 0);
+
+	glUniformBlockBinding(st->grid_program, glGetUniformBlockIndex(st->raymarch_prog, "uShapes"), 0);
 
 	glBindBufferRange(GL_UNIFORM_BUFFER, 0, st->uniform_buffers[0], 0, 1024);
 
@@ -178,8 +212,18 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 	glUniformBlockBinding(st->raymarch_prog, glGetUniformBlockIndex(st->raymarch_prog, "uOperations"), 1);
+	glUniformBlockBinding(st->grid_program, glGetUniformBlockIndex(st->raymarch_prog, "uOperations"), 1);
 
 	glBindBufferRange(GL_UNIFORM_BUFFER, 1, st->uniform_buffers[1], 0, 1024);
+
+	glGenTextures(1, &st->grid_texture);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_3D, st->grid_texture);
+
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, 128,128,128, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
+
+	glBindImageTexture(0, st->grid_texture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
+
 
 
 
@@ -434,6 +478,10 @@ struct renderOperation {
 	glBindBuffer(GL_UNIFORM_BUFFER, st->uniform_buffers[1]);
 	glBufferSubData(GL_UNIFORM_BUFFER, (long)16, sizeof(struct renderOperation) * op_count, &ops);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(int), &op_count);
+
+	glUseProgram(st->grid_program);
+	glDispatchCompute(128, 128, 128);
+	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 	glUseProgram(st->raymarch_prog);
 	glUniform1f(glGetUniformLocation(st->raymarch_prog, "uTime"), (float)time);

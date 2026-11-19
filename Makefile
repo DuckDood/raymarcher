@@ -23,7 +23,7 @@ else
 endif
 
 
-obj/main.c.o: src/main.c src/main.vert src/main.frag 
+obj/main.c.o: src/main.c src/main.vert src/main.frag src/main.comp 
 ifeq (${OSMODE}, l)
 	${CC} src/main.c -c -o obj/main.c.o -Iglad/include -Iinclude -std=c23 -Wall -Wextra -Werror
 else
@@ -31,7 +31,7 @@ else
 endif
 
 
-obj/vectors.c.o: src/vectors.c src/main.vert src/main.frag 
+obj/vectors.c.o: src/vectors.c src/main.vert src/main.frag src/main.comp 
 ifeq (${OSMODE}, l)
 	${CC} src/vectors.c -c -o obj/vectors.c.o -Iglad/include -Iinclude -std=c23 -Wall -Wextra -Werror
 else
@@ -39,7 +39,7 @@ else
 endif
 
 
-build/raymarcher: obj/glad.c.o obj/main.c.o obj/vectors.c.o src/main.vert src/main.frag 
+build/raymarcher: obj/glad.c.o obj/main.c.o obj/vectors.c.o src/main.vert src/main.frag src/main.comp 
 ifeq (${OSMODE}, l)
 	${CC} obj/glad.c.o obj/main.c.o obj/vectors.c.o -o build/raymarcher $(if $(findstring emcc,${CC}),-sMAX_WEBGL_VERSION=2,) -lSDL3 -lGL -lm
 else

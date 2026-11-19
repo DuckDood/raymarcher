@@ -1,0 +1,267 @@
+#version 430 core
+
+layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout(r32f, binding=0) uniform image3D distanceField;
+
+struct shape {
+	mat4 inv_transformation;
+	vec4 params;
+	vec4 color;
+	uint type;
+};
+
+
+const uint SHAPE_TYPE_SPHERE = uint(0);
+const uint SHAPE_TYPE_RECT = uint(1);
+const uint SHAPE_TYPE_TORUS = uint(2);
+const uint SHAPE_TYPE_CYLINDER = uint(3);
+
+
+struct renderOperation {
+	int operation; 
+
+	int operand1;
+	int operand2;
+
+	float smoothing;
+};
+
+const uint COMBINE_TYPE_MIN = uint(0);
+const uint COMBINE_TYPE_MAX = uint(1);
+
+float getSphereDistance(vec3 position, shape object) {
+	return length((object.inv_transformation * vec4(position, 1.0)).xyz) - object.params.x;
+}
+
+float getRectDistance(vec3 position, shape object) {
+	// general implementation from sebastian lague's video on ray marching
+	vec3 off = abs((object.inv_transformation * vec4(position, 1.0)).xyz) - object.params.xyz;
+
+	float unsignedDist = length(max(off, 0.0));
+
+	float dstInsideBox = max(max(min(off.x,0.0),min(off.y,0.0)),min(off.z,0.0));
+
+	return unsignedDist + dstInsideBox;
+}
+
+float getTorusDistance(vec3 position, shape object) {
+	vec3 p = (object.inv_transformation * vec4(position, 1.0)).xyz;
+	// https://iquilezles.org/articles/distfunctions/
+	vec2 q = vec2(length(p.xz)-object.params.x,p.y);
+	return length(q)-object.params.y;
+}
+
+float getCylinderDistance(vec3 position, shape object) {
+	vec3 p = (object.inv_transformation * vec4(position, 1.0)).xyz;
+	// https://iquilezles.org/articles/distfunctions/
+	vec2 d = abs(vec2(length(p.xz),p.y)) - vec2(object.params.x,object.params.y);
+	return min(max(d.x,d.y),0.0) + length(max(d,0.0));
+}
+
+
+float getShapeDistance(vec3 position, shape object) {
+	switch(object.type) {
+		case SHAPE_TYPE_SPHERE:
+			return getSphereDistance(position, object);
+			break;
+		case SHAPE_TYPE_RECT:
+			return getRectDistance(position, object);
+			break;
+		case SHAPE_TYPE_TORUS:
+			return getTorusDistance(position, object);
+		case SHAPE_TYPE_CYLINDER:
+			return getCylinderDistance(position, object);
+			break;
+	}
+	return 0.0; // sigh
+}
+
+layout (std140) uniform uShapes
+{
+	int shapeCount;
+	shape shapes[8];
+};
+
+layout (std140) uniform uOperations
+{
+	int opCount;
+	renderOperation operations[8];
+};
+
+
+
+#define toShapeCombineIndex(i) (i | (1<<31))
+
+
+vec2 smin( float a, float b, float k ) { // from https://iquilezles.org/articles/smin/
+	float h = 1.0 - min( abs(a-b)/(6.0*k), 1.0 );
+	float w = h*h*h;
+	float m = w*0.5;
+	float s = w*k; 
+	return (a<b) ? vec2(a-s,m) : vec2(b-s,1.0-m);
+}
+
+vec2 smax( float a, float b, float k ) { // from https://iquilezles.org/articles/smin/
+	vec2 imin = smin(-a, -b, k);
+	return vec2(-imin.x, imin.y);
+}
+
+float distToScene(vec3 position) {
+
+#define highestBit8 (1 << 7)
+#define highestBits8 ((1 << 7) | (1<<6))
+#define opToByte(x) (x >> 24)
+
+#define paramsToOp(type, out, boolean, op1Type, op2Type, sized, mixType) (type << 31) | (out << 29) | (boolean << 27) | (op1Type << 26) | (op2Type << 25) | (sized << 24) | (mixType << 22)
+
+
+#define opType(x) ((opToByte(x) & highestBit8) >> 7)
+#define opOut(x) ((opToByte(x) & (highestBits8>>1)) >> 5)
+#define opBool(x) ((opToByte(x) & (highestBits8>>3)) >> 3)
+
+#define opOp1Type(x) ((opToByte(x) & (highestBit8>>5)) >> 2)
+#define opOp2Type(x) ((opToByte(x) & (highestBit8>>6)) >> 1)
+
+#define opSized(x) ((opToByte(x) & (highestBit8>>7)) >> 0)
+
+#define opMixType(x) ((opToByte((x<<8))&highestBits8)>>6)
+
+	vec4 distances = vec4(0.0);
+
+
+	float tempDist = 0.0;
+
+	for(int i = 0; i < opCount; i++) {
+		renderOperation op = operations[i];
+
+		ivec4 eqVec = ivec4(0, 1, 2, 3);
+
+		vec4 operand1 = vec4(equal(ivec4(op.operand1), eqVec));
+		vec4 operand2 = vec4(equal(ivec4(op.operand2), eqVec));
+
+
+		vec4 outVec = vec4(equal(ivec4(opOut(op.operation)), eqVec));
+
+		float dist1;
+		float dist2;
+		switch(opOp1Type(op.operation)) {
+			case 0: // shape
+				dist1 = getShapeDistance(position, shapes[op.operand1]);
+				break;
+			case 1: // distance
+				dist1 = dot(distances, operand1);
+				break;
+		}
+		switch(opOp2Type(op.operation)) {
+			case 0: // shape
+				dist2 = getShapeDistance(position, shapes[op.operand2]);
+				break;
+			case 1: // distance
+				dist2 = dot(distances, operand2);
+				break;
+		}
+		switch(opBool(op.operation)) {
+			case 0: // union
+				tempDist = smin(dist1, dist2, op.smoothing).x;
+				break;
+			case 1: // difference
+				tempDist = smax(dist1, -dist2, op.smoothing).x;
+				break;
+			case 2: // intersection
+				tempDist = smax(dist1, dist2, op.smoothing).x;
+				break;
+		}
+
+		distances *= (1.0-outVec);
+		distances += outVec * tempDist;
+	}
+
+	return distances.x;
+}
+
+vec3 sceneCol(vec3 position) {
+	vec4 distances = vec4(0.0);
+
+	vec3 colors[4];
+
+
+	float tempDist = 0.0;
+	vec3 tempCol;
+
+	for(int i = 0; i < opCount; i++) {
+		renderOperation op = operations[i];
+
+		ivec4 eqVec = ivec4(0, 1, 2, 3);
+
+		vec4 operand1 = vec4(equal(ivec4(op.operand1), eqVec));
+		vec4 operand2 = vec4(equal(ivec4(op.operand2), eqVec));
+
+
+		vec4 outVec = vec4(equal(ivec4(opOut(op.operation)), eqVec));
+
+		float dist1;
+		float dist2;
+
+		vec3 col1;
+		vec3 col2;
+		switch(opOp1Type(op.operation)) {
+			case 0: // shape
+				dist1 = getShapeDistance(position, shapes[op.operand1]);
+				col1 = shapes[op.operand1].color.xyz;
+				break;
+			case 1: // distance
+				dist1 = dot(distances, operand1);
+				col1 = colors[op.operand1];
+				break;
+		}
+		switch(opOp2Type(op.operation)) {
+			case 0: // shape
+				dist2 = getShapeDistance(position, shapes[op.operand2]);
+				col2 = shapes[op.operand2].color.xyz;
+				break;
+			case 1: // distance
+				dist2 = dot(distances, operand2);
+				col2 = colors[op.operand2];
+				break;
+		}
+		switch(opMixType(op.operation)) {
+			case 1:
+				col2 = col1;
+				break;
+			case 2:
+				col1 = col2;
+				break;
+		}
+		switch(opBool(op.operation)) {
+			case 0: // union
+				tempDist = smin(dist1, dist2, op.smoothing).x;
+				tempCol = mix(col1, col2, smin(dist1, dist2, op.smoothing).y);
+				break;
+			case 1: // difference
+				tempDist = smax(dist1, -dist2, op.smoothing).x;
+				tempCol = mix(col1, col2, smax(dist1, -dist2, op.smoothing).y);
+				break;
+			case 2: // intersection
+				tempDist = smax(dist1, dist2, op.smoothing).x;
+				tempCol = mix(col1, col2, smax(dist1, dist2, op.smoothing).y);
+				break;
+		}
+
+		distances *= (1.0-outVec);
+		distances += outVec * tempDist;
+
+		colors[opOut(op.operation)] = tempCol;
+	}
+
+	return colors[0];
+}
+
+float textureLength = 100;
+
+void main() {
+	vec3 position = ((gl_GlobalInvocationID / gl_NumWorkGroups) - 0.5) * textureLength;
+
+	float distance = distToScene(position);
+
+	imageStore(distanceField, ivec3(gl_GlobalInvocationID), vec4(distance));
+}
