@@ -551,7 +551,7 @@ void main() {
 		ray.direction =  lightDir;
 		ray.position += normal * 0.01;
 		rayHitInfo shadowInfo = march(ray);
-		//vec3 col = sceneCol(ray.position);
+		vec3 col = sceneCol(ray.position);
 		vec3 viewDir = normalize(uCamPosition - ray.position);
 
 		vec3 halfDir = normalize(viewDir + lightDir);
