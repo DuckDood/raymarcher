@@ -270,13 +270,14 @@ vec3 getNormalFromPos(vec3 position, float dist, float step) {
 			return getNormal(distToShapePosX, dist, distToShapePosY, dist, distToShapePosZ, dist);
 }
 
-float textureLength = 30.0;
+float textureLength = 10.0;
 
 void main() {
 	vec3 position = (vec3((gl_GlobalInvocationID) / vec3(gl_NumWorkGroups)) - 0.5) * textureLength;
 
 
 	float distance = distToScene(position);
+	vec3 color = sceneCol(position);
 
-	imageStore(distanceField, ivec3(gl_GlobalInvocationID), vec4(distance));
+	imageStore(distanceField, ivec3(gl_GlobalInvocationID), vec4(color, distance));
 }

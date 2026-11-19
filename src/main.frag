@@ -201,7 +201,7 @@ vec2 smax( float a, float b, float k ) { // from https://iquilezles.org/articles
 }
 
 float distToSceneTex(vec3 position) {
-	float textureLength = 30.0;
+	float textureLength = 10.0;
 	vec3 texCoord = vec3(((position / textureLength) + 0.5));
 	if(
 			texCoord.x > 1 || texCoord.x < 0 ||
@@ -210,7 +210,7 @@ float distToSceneTex(vec3 position) {
 			) {
 		return 1000;
 	}
-	return texture(distanceField, texCoord).x;
+	return texture(distanceField, texCoord).a;
 }
 
 float distToScene(vec3 position) {
@@ -392,6 +392,47 @@ vec3 getNormalFromPos(vec3 position, float dist, float step) {
 			return getNormal(distToShapePosX, dist, distToShapePosY, dist, distToShapePosZ, dist);
 }
 
+vec3 getNormalFromTex(vec3 position) {
+	float textureLength = 10.0;
+	vec3 texCoord = vec3(((position / textureLength) + 0.5));
+	if(
+			texCoord.x > 1 || texCoord.x < 0 ||
+			texCoord.y > 1 || texCoord.y < 0 ||
+			texCoord.z > 1 || texCoord.z < 0 
+			) {
+		return vec3(0);
+	}
+	return normalize(texture(distanceField, texCoord).rgb);
+
+}
+vec3 getNormalFromPosTex(vec3 position) {
+	float textureLength = 10.0;
+	vec3 texCoord = vec3(((position / textureLength) + 0.5));
+	if(
+			texCoord.x > 1 || texCoord.x < 0 ||
+			texCoord.y > 1 || texCoord.y < 0 ||
+			texCoord.z > 1 || texCoord.z < 0 
+			) {
+		return vec3(0);
+	}
+
+	float step = 0.01;
+
+	float dist = distToSceneTex(position);
+
+	float distPosX = distToSceneTex(position + vec3(step, 0, 0));
+	float distPosY = distToSceneTex(position + vec3(0, step, 0));
+	float distPosZ = distToSceneTex(position + vec3(0, 0, step));
+
+	float distNegX = distToSceneTex(position - vec3(step, 0, 0));
+	float distNegY = distToSceneTex(position - vec3(0, step, 0));
+	float distNegZ = distToSceneTex(position - vec3(0, 0, step));
+
+	//return getNormal(distPosX, dist, distPosY, dist, distPosZ, dist);
+	return getNormal(distPosX, distNegX, distPosY, distNegY, distPosZ, distNegZ);
+
+}
+
 struct rayHitInfo {
 	vec3 position;
 	float finalDist;
@@ -499,7 +540,8 @@ void main() {
 
 	rayHitInfo info = march(ray);
 	ray.position = info.position;
-	vec3 normal = getNormalFromPos(info.position, info.finalDist, 0.001);
+	//vec3 normal = getNormalFromPos(info.position, info.finalDist, 0.001);
+	vec3 normal = getNormalFromPosTex(info.position);
 	bool hit = info.hit;
 
 	vec3 lightDir = normalize(vec3(-0.5, 1, -0.3));
@@ -509,7 +551,7 @@ void main() {
 		ray.direction =  lightDir;
 		ray.position += normal * 0.01;
 		rayHitInfo shadowInfo = march(ray);
-		vec3 col = sceneCol(ray.position);
+		//vec3 col = sceneCol(ray.position);
 		vec3 viewDir = normalize(uCamPosition - ray.position);
 
 		vec3 halfDir = normalize(viewDir + lightDir);

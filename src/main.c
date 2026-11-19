@@ -227,7 +227,7 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-#define TEX_SIZE 256
+#define TEX_SIZE 64
 
 	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, TEX_SIZE,TEX_SIZE,TEX_SIZE, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
 
