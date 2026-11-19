@@ -1,4 +1,4 @@
-#version 300 es
+#version 430 core
 precision highp float;
 
 out vec4 FragColor;
@@ -8,6 +8,10 @@ uniform vec2 uResolution;
 
 uniform mat4 uCamRotationMatrix;
 uniform vec3 uCamPosition;
+
+//layout(binding=0) uniform sampler3D distanceField;
+uniform sampler3D distanceField;
+//uniform sampler3D distanceField;
 
 /*struct sphere {
 	vec3 position;
@@ -196,6 +200,19 @@ vec2 smax( float a, float b, float k ) { // from https://iquilezles.org/articles
 	return vec2(-imin.x, imin.y);
 }
 
+float distToSceneTex(vec3 position) {
+	float textureLength = 30.0;
+	vec3 texCoord = vec3(((position / textureLength) + 0.5));
+	if(
+			texCoord.x > 1 || texCoord.x < 0 ||
+			texCoord.y > 1 || texCoord.y < 0 ||
+			texCoord.z > 1 || texCoord.z < 0 
+			) {
+		return 1000;
+	}
+	return texture(distanceField, texCoord).x;
+}
+
 float distToScene(vec3 position) {
 
 #define highestBit8 (1 << 7)
@@ -370,6 +387,8 @@ vec3 getNormalFromPos(vec3 position, float dist, float step) {
 			float distToShapePosY = distToScene(position + vec3(0.0, step, 0.0));
 			float distToShapePosZ = distToScene(position + vec3(0.0, 0.0, step));
 
+			dist = distToScene(position);
+
 			return getNormal(distToShapePosX, dist, distToShapePosY, dist, distToShapePosZ, dist);
 }
 
@@ -390,7 +409,7 @@ rayHitInfo march(camRay ray) {
 			belowHit = 0.01;
 		}*/
 		belowHit = float(step_count) / 12700.f + 0.001;
-		float dist = distToScene(ray.position);
+		float dist = distToSceneTex(ray.position);
 
 		if(dist < belowHit) {
 			hit = true;
@@ -430,6 +449,9 @@ rayHitInfo march(camRay ray) {
 }
 
 void main() {
+	//FragColor = texture(distanceField, vec3(vec2((gl_FragCoord.xy / uResolution)), 0));
+	//FragColor = vec4(texture(distanceField, vec3(gl_FragCoord.xy / uResolution, 0)).x, 0, 0, 1);
+	//return;
 	//FragColor = vec4(float(shapeCount)/10.0, 0.0, 0.0, 1.0);
 	//return;
 	float aspectRatio = uResolution.x / uResolution.y;
@@ -468,6 +490,12 @@ void main() {
 
 		ray.position += ray.direction * dist;
 	}*/
+
+	//float textureLength = 10.0;
+	//ivec3 texCoord = ivec3(((ray.position / textureLength) + 0.5) * 256.0);
+	//float dist =  imageLoad(distanceField, texCoord).x;
+	//FragColor = vec4(vec3(dist), 1.0);
+	//return;
 
 	rayHitInfo info = march(ray);
 	ray.position = info.position;

@@ -64,7 +64,7 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 		return SDL_APP_FAILURE;
 	}
 
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 
 	st->window = SDL_CreateWindow("raymarcher", WIDTH, HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
@@ -220,12 +220,24 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D, st->grid_texture);
 
-	glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, 128,128,128, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	glBindImageTexture(0, st->grid_texture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+#define TEX_SIZE 256
+
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, TEX_SIZE,TEX_SIZE,TEX_SIZE, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
+
+	glBindImageTexture(0, st->grid_texture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
 
 
 
+	glUseProgram(st->grid_program);
+	glDispatchCompute(TEX_SIZE, TEX_SIZE, TEX_SIZE);
+	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 	//st->cam_pos = (vec3){1, 0, -3};
 	//st->cam_rotation = (vec3){-3.141/2 + 1, 0, 0};
@@ -480,7 +492,7 @@ struct renderOperation {
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(int), &op_count);
 
 	glUseProgram(st->grid_program);
-	glDispatchCompute(128, 128, 128);
+	glDispatchCompute(TEX_SIZE, TEX_SIZE, TEX_SIZE);
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 	glUseProgram(st->raymarch_prog);
@@ -491,6 +503,8 @@ struct renderOperation {
 
 	glBindVertexArray(st->screen_tri_vao);
 
+
+	glBindTexture(GL_TEXTURE_3D, st->grid_texture);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
 	SDL_GL_SwapWindow(st->window);
