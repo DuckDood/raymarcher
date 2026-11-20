@@ -227,7 +227,7 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-#define TEX_SIZE 64
+#define TEX_SIZE 80
 
 	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, TEX_SIZE,TEX_SIZE,TEX_SIZE, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
 
@@ -355,7 +355,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
 	sp[0].color = (vec3){1, 0, 0};
 
-	sp[1].inv_transformation = gen_inverse_transformation_matrix((vec3){-3, 0, 0}, (vec3){0}, (vec3){1,1,1});
+	sp[1].inv_transformation = gen_inverse_transformation_matrix((vec3){-3, 0, 0}, (vec3){1.2, 1.5, 1.5}, (vec3){1,1,1});
 
 	sp[1].params[0] = 1;
 	sp[1].params[1] = 1;
