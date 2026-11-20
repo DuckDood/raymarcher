@@ -41,6 +41,7 @@ struct progstate {
 	GLuint uniform_buffers[2];
 
 	GLuint grid_texture;
+	GLuint cache_texture;
 	GLuint grid_program;
 
 };
@@ -216,6 +217,8 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 
 	glBindBufferRange(GL_UNIFORM_BUFFER, 1, st->uniform_buffers[1], 0, 1024);
 
+#define TEX_SIZE 256
+
 	glGenTextures(1, &st->grid_texture);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D, st->grid_texture);
@@ -227,11 +230,29 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-#define TEX_SIZE 80
 
 	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, TEX_SIZE,TEX_SIZE,TEX_SIZE, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
 
 	glBindImageTexture(0, st->grid_texture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
+
+
+	glGenTextures(1, &st->cache_texture);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_3D, st->cache_texture);
+
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_R8I, TEX_SIZE,TEX_SIZE,TEX_SIZE, 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, NULL);
+
+	glBindImageTexture(1, st->cache_texture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R8I);
+
+	glActiveTexture(GL_TEXTURE0);
 
 
 

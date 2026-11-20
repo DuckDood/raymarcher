@@ -417,7 +417,7 @@ vec3 getNormalFromPosTex(vec3 position) {
 		return vec3(0);
 	}
 
-	float step = 1/80.;
+	float step = 1/128.;
 
 
 	float distPosX = texture(distanceField, texCoord + vec3(step, 0, 0)).a;

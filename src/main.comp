@@ -3,6 +3,8 @@
 layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 layout(rgba32f, binding=0) uniform image3D distanceField;
 
+layout(r8i, binding=1) uniform iimage3D cacheState;
+
 struct shape {
 	mat4 inv_transformation;
 	vec4 params;
@@ -273,11 +275,16 @@ vec3 getNormalFromPos(vec3 position, float dist, float step) {
 float textureLength = 15.0;
 
 void main() {
+	if(imageLoad(cacheState, ivec3(gl_GlobalInvocationID)).x != 0) return;
 	vec3 position = (vec3((gl_GlobalInvocationID) / vec3(gl_NumWorkGroups)) - 0.5) * textureLength;
 
 
-	float distance = distToScene(position);
-	vec3 color = sceneCol(position);
 
+	vec3 color = vec3(0);
+	float distance;
+	distance = distToScene(position);
 	imageStore(distanceField, ivec3(gl_GlobalInvocationID), vec4(color, distance));
+	imageStore(cacheState, ivec3(gl_GlobalInvocationID), ivec4(1));
+	//vec3 color = sceneCol(position);
+
 }
