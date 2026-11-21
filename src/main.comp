@@ -283,7 +283,7 @@ void main() {
 	vec3 color = vec3(0);
 	float distance;
 	distance = distToScene(position);
-	imageStore(distanceField, ivec3(gl_GlobalInvocationID), vec4(color, distance));
+	imageStore(distanceField, ivec3(gl_GlobalInvocationID), vec4(distance));
 	imageStore(cacheState, ivec3(gl_GlobalInvocationID), ivec4(1));
 	//vec3 color = sceneCol(position);
 

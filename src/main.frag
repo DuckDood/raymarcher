@@ -213,7 +213,7 @@ float distToSceneTex(vec3 position) {
 			) {
 		return 1000;
 	}
-	return texture(distanceField, texCoord).a;
+	return texture(distanceField, texCoord).x;
 }
 
 float distToScene(vec3 position) {
@@ -420,13 +420,13 @@ vec3 getNormalFromPosTex(vec3 position) {
 	float step = 1/128.;
 
 
-	float distPosX = texture(distanceField, texCoord + vec3(step, 0, 0)).a;
-	float distPosY = texture(distanceField, texCoord + vec3(0, step, 0)).a;
-	float distPosZ = texture(distanceField, texCoord + vec3(0, 0, step)).a;
+	float distPosX = texture(distanceField, texCoord + vec3(step, 0, 0)).x;
+	float distPosY = texture(distanceField, texCoord + vec3(0, step, 0)).x;
+	float distPosZ = texture(distanceField, texCoord + vec3(0, 0, step)).x;
 
-	float distNegX = texture(distanceField, texCoord - vec3(step, 0, 0)).a;
-	float distNegY = texture(distanceField, texCoord - vec3(0, step, 0)).a;
-	float distNegZ = texture(distanceField, texCoord - vec3(0, 0, step)).a;
+	float distNegX = texture(distanceField, texCoord - vec3(step, 0, 0)).x;
+	float distNegY = texture(distanceField, texCoord - vec3(0, step, 0)).x;
+	float distNegZ = texture(distanceField, texCoord - vec3(0, 0, step)).x;
 
 
 	//return getNormal(distPosX, dist, distPosY, dist, distPosZ, dist);
