@@ -1,6 +1,7 @@
 #version 430 core
 
 layout(r8i, binding=1) uniform iimage3D cacheState;
+uniform float textureLength;
 
 struct change {
 	vec4 position;
@@ -15,4 +16,5 @@ layout (std140) uniform uCacheChanges {
 
 
 void main() {
+	
 }

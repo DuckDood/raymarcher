@@ -289,9 +289,10 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 
 
 
-	glUseProgram(st->grid_program);
+	/*glUseProgram(st->grid_program);
+	glUniform1f(glGetUniformLocation(st->grid_program, "uTextureLength"), 15);
 	glDispatchCompute(TEX_SIZE / WORK_SIZE, TEX_SIZE / WORK_SIZE, TEX_SIZE / WORK_SIZE);
-	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);*/
 
 	//st->cam_pos = (vec3){1, 0, -3};
 	//st->cam_rotation = (vec3){-3.141/2 + 1, 0, 0};
@@ -546,10 +547,15 @@ struct renderOperation {
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(int), &op_count);
 
 	glUseProgram(st->grid_program);
+
+	glUniform1f(glGetUniformLocation(st->grid_program, "uTextureLength"), 15);
+
 	glDispatchCompute(TEX_SIZE / WORK_SIZE, TEX_SIZE / WORK_SIZE, TEX_SIZE / WORK_SIZE);
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 	glUseProgram(st->raymarch_prog);
+	glUniform1f(glGetUniformLocation(st->raymarch_prog, "uTextureLength"), 15);
+
 	glUniform1f(glGetUniformLocation(st->raymarch_prog, "uTime"), (float)time);
 	glUniform2f(glGetUniformLocation(st->raymarch_prog, "uResolution"), st->screen_width, st->screen_height);
 	glUniform3fv(glGetUniformLocation(st->raymarch_prog, "uCamPosition"), 1, (GLfloat*)&st->cam_pos);

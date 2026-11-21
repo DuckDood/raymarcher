@@ -200,9 +200,9 @@ vec2 smax( float a, float b, float k ) { // from https://iquilezles.org/articles
 	return vec2(-imin.x, imin.y);
 }
 
-float textureLength = 15.0;
+uniform float uTextureLength;
 
-#define positionToTexCoord(x) vec3(((position / textureLength) + 0.5))
+#define positionToTexCoord(x) vec3(((position / uTextureLength) + 0.5))
 
 float distToSceneTex(vec3 position) {
 	vec3 texCoord = positionToTexCoord(position);//vec3(((position / textureLength) + 0.5));
@@ -396,7 +396,7 @@ vec3 getNormalFromPos(vec3 position, float dist, float step) {
 }
 
 vec3 getNormalFromTex(vec3 position) {
-	vec3 texCoord = vec3(((position / textureLength) + 0.5));
+	vec3 texCoord = vec3(((position / uTextureLength) + 0.5));
 	if(
 			texCoord.x > 1 || texCoord.x < 0 ||
 			texCoord.y > 1 || texCoord.y < 0 ||
