@@ -214,7 +214,7 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 	}
 
 	st->cache_program = glCreateProgram();
-	glAttachShader(st->cache_program, grid_compute);
+	glAttachShader(st->cache_program, cache_compute);
 
 	glLinkProgram(st->cache_program);
 
@@ -222,7 +222,7 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 
 	if(!compile_status) {
 		glGetProgramInfoLog(st->cache_program, 512, NULL, info_log);
-		fprintf(stderr, "Failed to link compute program:\n%s\n", info_log);
+		fprintf(stderr, "Failed to link cache program:\n%s\n", info_log);
 	}
 	glDeleteShader(cache_compute);
 
@@ -546,6 +546,15 @@ struct renderOperation {
 	glBufferSubData(GL_UNIFORM_BUFFER, (long)16, sizeof(struct renderOperation) * op_count, &ops);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(int), &op_count);
 
+	// cache operations
+	glUseProgram(st->cache_program);
+
+	glUniform1f(glGetUniformLocation(st->cache_program, "uTextureLength"), 15);
+
+	glDispatchCompute(TEX_SIZE / WORK_SIZE, TEX_SIZE / WORK_SIZE, TEX_SIZE / WORK_SIZE);
+	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+	// filling the grid
 	glUseProgram(st->grid_program);
 
 	glUniform1f(glGetUniformLocation(st->grid_program, "uTextureLength"), 15);
@@ -553,6 +562,7 @@ struct renderOperation {
 	glDispatchCompute(TEX_SIZE / WORK_SIZE, TEX_SIZE / WORK_SIZE, TEX_SIZE / WORK_SIZE);
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
+	// drawing
 	glUseProgram(st->raymarch_prog);
 	glUniform1f(glGetUniformLocation(st->raymarch_prog, "uTextureLength"), 15);
 
