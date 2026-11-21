@@ -27,6 +27,7 @@ srcflag -Wall -Wextra -Werror
 check src/main.vert
 check src/main.frag
 check src/main.comp
+check src/cache.comp
 
 src main.c
 src vectors.c

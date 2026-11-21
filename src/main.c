@@ -43,6 +43,7 @@ struct progstate {
 	GLuint grid_texture;
 	GLuint cache_texture;
 	GLuint grid_program;
+	GLuint cache_program;
 
 };
 
@@ -194,6 +195,37 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 		fprintf(stderr, "Failed to link compute program:\n%s\n", info_log);
 	}
 	glDeleteShader(grid_compute);
+
+
+	const char *cache_shader_source = (const char[]){
+		#embed "cache.comp"
+		,'\0'
+	};
+	GLuint cache_compute = glCreateShader(GL_COMPUTE_SHADER);
+
+	glShaderSource(cache_compute, 1, &cache_shader_source, NULL);
+	glCompileShader(cache_compute);
+
+	glGetShaderiv(cache_compute, GL_COMPILE_STATUS, &compile_status);
+	if(!compile_status) {
+		glGetShaderInfoLog(cache_compute, 512, NULL, info_log);
+		fprintf(stderr, "Failed to compile cache shader:\n%s\n", info_log);
+		return SDL_APP_FAILURE;
+	}
+
+	st->cache_program = glCreateProgram();
+	glAttachShader(st->cache_program, grid_compute);
+
+	glLinkProgram(st->cache_program);
+
+	glGetProgramiv(st->cache_program, GL_LINK_STATUS, &compile_status);
+
+	if(!compile_status) {
+		glGetProgramInfoLog(st->cache_program, 512, NULL, info_log);
+		fprintf(stderr, "Failed to link compute program:\n%s\n", info_log);
+	}
+	glDeleteShader(cache_compute);
+
 
 
 	glGenBuffers(2, st->uniform_buffers);
