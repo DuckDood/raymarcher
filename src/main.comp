@@ -1,6 +1,6 @@
 #version 430 core
 
-layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout (local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
 layout(rgba32f, binding=0) uniform image3D distanceField;
 
 layout(r8i, binding=1) uniform iimage3D cacheState;
@@ -276,7 +276,7 @@ float textureLength = 15.0;
 
 void main() {
 	if(imageLoad(cacheState, ivec3(gl_GlobalInvocationID)).x != 0) return;
-	vec3 position = (vec3((gl_GlobalInvocationID) / vec3(gl_NumWorkGroups)) - 0.5) * textureLength;
+	vec3 position = (vec3((gl_GlobalInvocationID) / vec3(gl_NumWorkGroups * gl_WorkGroupSize)) - 0.5) * textureLength;
 
 
 

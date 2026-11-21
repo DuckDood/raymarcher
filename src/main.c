@@ -218,6 +218,7 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 	glBindBufferRange(GL_UNIFORM_BUFFER, 1, st->uniform_buffers[1], 0, 1024);
 
 #define TEX_SIZE 256
+#define WORK_SIZE 4
 
 	glGenTextures(1, &st->grid_texture);
 	glActiveTexture(GL_TEXTURE0);
@@ -257,7 +258,7 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 
 
 	glUseProgram(st->grid_program);
-	glDispatchCompute(TEX_SIZE, TEX_SIZE, TEX_SIZE);
+	glDispatchCompute(TEX_SIZE / WORK_SIZE, TEX_SIZE / WORK_SIZE, TEX_SIZE / WORK_SIZE);
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 	//st->cam_pos = (vec3){1, 0, -3};
@@ -513,7 +514,7 @@ struct renderOperation {
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(int), &op_count);
 
 	glUseProgram(st->grid_program);
-	glDispatchCompute(TEX_SIZE, TEX_SIZE, TEX_SIZE);
+	glDispatchCompute(TEX_SIZE / WORK_SIZE, TEX_SIZE / WORK_SIZE, TEX_SIZE / WORK_SIZE);
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 	glUseProgram(st->raymarch_prog);
