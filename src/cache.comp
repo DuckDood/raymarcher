@@ -4,20 +4,30 @@ layout (local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
 
 layout(r8i, binding=1) uniform iimage3D cacheState;
 uniform float uTextureLength;
+uniform float uTextureSize;
+#define positionToTexCoord(x) vec3(((x / uTextureLength) + 0.5))
 
 struct change {
 	vec4 position;
 	vec4 size; // aabb
 };
 
-layout (std140) uniform uCacheChanges {
-	int changeCount;
-	change changes[16];
-};
+uniform int changeCount;
+uniform change changes[16];
 
 
 
 void main() {
-	imageStore(cacheState, ivec3(gl_GlobalInvocationID), ivec4(0));
+	vec3 texCoord = vec3(gl_GlobalInvocationID) / uTextureSize;
+	//imageStore(cacheState, ivec3(gl_GlobalInvocationID), ivec4(1));
+	for(int i = 0; i < changeCount; i++) {
+		vec3 start = positionToTexCoord(changes[i].position.xyz);
+		vec3 end = positionToTexCoord(changes[i].size.xyz + changes[i].position.xyz);
+
+		if(any(greaterThan(texCoord, end))) continue;
+		if(any(lessThan(texCoord, start))) continue;
+		imageStore(cacheState, ivec3(gl_GlobalInvocationID), ivec4(0));
+	}
+	//imageStore(cacheState, ivec3(gl_GlobalInvocationID), ivec4(0));
 	return;
 }

@@ -479,6 +479,7 @@ rayHitInfo march(camRay ray) {
 			break;
 		}*/
 
+		dist = min(0.5, dist);
 		ray.position += ray.direction * dist;
 	}
 

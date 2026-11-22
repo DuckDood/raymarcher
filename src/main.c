@@ -546,10 +546,23 @@ struct renderOperation {
 	glBufferSubData(GL_UNIFORM_BUFFER, (long)16, sizeof(struct renderOperation) * op_count, &ops);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(int), &op_count);
 
+
 	// cache operations
 	glUseProgram(st->cache_program);
 
 	glUniform1f(glGetUniformLocation(st->cache_program, "uTextureLength"), 15);
+	glUniform1f(glGetUniformLocation(st->cache_program, "uTextureSize"), TEX_SIZE);
+
+	glUniform1i(glGetUniformLocation(st->cache_program, "changeCount"), 2);
+
+	//glUniform4f(glGetUniformLocation(st->cache_program, "changes[0].position"), -sp[2].inv_transformation.columns[3][0] - 1, -sp[2].inv_transformation.columns[3][1] - 1, -sp[2].inv_transformation.columns[3][2] - 1, 0);
+	//glUniform4f(glGetUniformLocation(st->cache_program, "changes[0].position"), 3 - 0.5, 0 - 0.5, sin(time)*4 - 0.5, 0);
+	glUniform4f(glGetUniformLocation(st->cache_program, "changes[0].position"), 3 - 1, 0 - 1, sin(time)*4 - 1, 0);
+	glUniform4f(glGetUniformLocation(st->cache_program, "changes[0].size"), 2, 2, 2, 0);
+
+	glUniform4f(glGetUniformLocation(st->cache_program, "changes[1].position"), -3 + sin(time) * 3 - 2.2, 0 - 2.2, 0 - 2.2, 0);
+	glUniform4f(glGetUniformLocation(st->cache_program, "changes[1].size"), 4.4, 4.4, 4.4, 0);
+
 
 	glDispatchCompute(TEX_SIZE / WORK_SIZE, TEX_SIZE / WORK_SIZE, TEX_SIZE / WORK_SIZE);
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
