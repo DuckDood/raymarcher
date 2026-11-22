@@ -1,9 +1,9 @@
 #version 430 core
 
 layout (local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
-layout(rgba32f, binding=0) uniform image3D distanceField;
+layout(rgba32f, binding=0) uniform image3D distanceFields[4];
 
-layout(r8i, binding=1) uniform iimage3D cacheState;
+layout(r8i, binding=4) uniform iimage3D cacheState[4];
 uniform float uTextureLength;
 
 struct shape {
@@ -275,16 +275,17 @@ vec3 getNormalFromPos(vec3 position, float dist, float step) {
 
 
 void main() {
-	if(imageLoad(cacheState, ivec3(gl_GlobalInvocationID)).x != 0) return;
-	vec3 position = (vec3((gl_GlobalInvocationID) / vec3(gl_NumWorkGroups * gl_WorkGroupSize)) - 0.5) * uTextureLength;
 
 
-
-	vec3 color = vec3(0);
-	float distance;
-	distance = distToScene(position);
-	imageStore(distanceField, ivec3(gl_GlobalInvocationID), vec4(distance));
-	imageStore(cacheState, ivec3(gl_GlobalInvocationID), ivec4(1));
+	for(int i = 0; i < 8; i++) {
+	//	if(imageLoad(cacheState[i], ivec3(gl_GlobalInvocationID)).x != 0) continue;
+		vec3 position = (vec3((gl_GlobalInvocationID) / vec3(gl_NumWorkGroups * gl_WorkGroupSize)) - 0.5) * uTextureLength * pow(2, i);
+		vec3 color = vec3(0);
+		float distance;
+		distance = distToScene(position);
+		imageStore(distanceFields[i], ivec3(gl_GlobalInvocationID), vec4(distance));
+		imageStore(cacheState[i], ivec3(gl_GlobalInvocationID), ivec4(1));
+	}
 	//vec3 color = sceneCol(position);
 
 }

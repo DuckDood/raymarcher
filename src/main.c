@@ -255,10 +255,10 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 
 	glBindBufferRange(GL_UNIFORM_BUFFER, 1, st->uniform_buffers[1], 0, 1024);
 
-#define TEX_SIZE 256
+#define TEX_SIZE 128
 #define WORK_SIZE 4
 
-	st->lod_count = 8;
+	st->lod_count = 4;
 
 	glGenTextures(st->lod_count, st->grid_textures);
 	glActiveTexture(GL_TEXTURE0);
@@ -275,7 +275,7 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 
 		glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, TEX_SIZE,TEX_SIZE,TEX_SIZE, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
 
-		glBindImageTexture(i*2, st->grid_textures[i], 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
+		glBindImageTexture(i, st->grid_textures[i], 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
 	}
 
 
@@ -294,7 +294,7 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 
 		glTexImage3D(GL_TEXTURE_3D, 0, GL_R8I, TEX_SIZE,TEX_SIZE,TEX_SIZE, 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, NULL);
 
-		glBindImageTexture(1 + 2*i, st->cache_textures[i], 0, GL_TRUE, 0, GL_READ_WRITE, GL_R8I);
+		glBindImageTexture(st->lod_count + 2*i, st->cache_textures[i], 0, GL_TRUE, 0, GL_READ_WRITE, GL_R8I);
 	}
 
 	glActiveTexture(GL_TEXTURE0);
@@ -599,7 +599,10 @@ struct renderOperation {
 	glBindVertexArray(st->screen_tri_vao);
 
 
-	glBindTexture(GL_TEXTURE_3D, st->grid_textures[0]);
+	for(int i = 0; i < st->lod_count; i++) {
+		glActiveTexture(GL_TEXTURE0 + i);
+		glBindTexture(GL_TEXTURE_3D, st->grid_textures[i]);
+	}
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
 	SDL_GL_SwapWindow(st->window);

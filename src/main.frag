@@ -9,9 +9,11 @@ uniform vec2 uResolution;
 uniform mat4 uCamRotationMatrix;
 uniform vec3 uCamPosition;
 
-//layout(binding=0) uniform sampler3D distanceField;
-uniform sampler3D distanceField;
-//uniform sampler3D distanceField;
+int lod = 1;
+
+//layout(binding=2) uniform sampler3D distanceFields[3];
+layout(binding=0) uniform sampler3D distanceFields[8];
+//uniform sampler3D distanceFields[3];
 
 /*struct sphere {
 	vec3 position;
@@ -202,18 +204,40 @@ vec2 smax( float a, float b, float k ) { // from https://iquilezles.org/articles
 
 uniform float uTextureLength;
 
-#define positionToTexCoord(x) vec3(((x / uTextureLength) + 0.5))
+#define positionToTexCoord(x, lod) vec3(((x / (uTextureLength * pow(2, lod))) + 0.5))
 
 float distToSceneTex(vec3 position) {
-	vec3 texCoord = positionToTexCoord(position);//vec3(((position / textureLength) + 0.5));
+	vec3 lodVec = abs(position);
+	float x = max(max(lodVec.x, lodVec.y), lodVec.z);
+	int thisLod = int(max(floor(log2((x*2 + 5)/(uTextureLength/2))), 0));
+	lod = thisLod;
+	lod = max(lod, int(uTime) % 2);
+
+	vec3 texCoord = positionToTexCoord(position, lod);
 	if(
 			texCoord.x > 1 || texCoord.x < 0 ||
 			texCoord.y > 1 || texCoord.y < 0 ||
 			texCoord.z > 1 || texCoord.z < 0 
 			) {
 		return 1000;
+
 	}
-	return texture(distanceField, texCoord).x;
+
+	switch(lod) {
+		case 0:
+			return texture(distanceFields[0], texCoord).x;
+			break;
+		case 1:
+			return texture(distanceFields[1], texCoord).x;
+			break;
+		case 2:
+			return texture(distanceFields[2], texCoord).x;
+			break;
+		case 3:
+			return texture(distanceFields[3], texCoord).x;
+			break;
+	}
+			//return texture(distanceFields[3], texCoord).x;
 }
 
 float distToScene(vec3 position) {
@@ -395,7 +419,7 @@ vec3 getNormalFromPos(vec3 position, float dist, float step) {
 			return getNormal(distToShapePosX, dist, distToShapePosY, dist, distToShapePosZ, dist);
 }
 
-vec3 getNormalFromTex(vec3 position) {
+/*vec3 getNormalFromTex(vec3 position) {
 	vec3 texCoord = vec3(((position / uTextureLength) + 0.5));
 	if(
 			texCoord.x > 1 || texCoord.x < 0 ||
@@ -404,29 +428,68 @@ vec3 getNormalFromTex(vec3 position) {
 			) {
 		return vec3(0);
 	}
-	return normalize(texture(distanceField, texCoord).rgb);
+	return normalize(texture(distanceFields[3], texCoord).rgb);
 
-}
+}*/
 vec3 getNormalFromPosTex(vec3 position) {
-	vec3 texCoord = positionToTexCoord(position);
+	vec3 lodVec = abs(position);
+	float x = max(max(lodVec.x, lodVec.y), lodVec.z);
+	int thisLod = int(max(floor(log2((x*2 + 5)/(uTextureLength/2))), 0));
+	lod = thisLod;
+	lod = max(lod, int(uTime) % 2);
+
+	vec3 texCoord = positionToTexCoord(position, lod);
 	if(
-			texCoord.x > 1 || texCoord.x < 0 ||
-			texCoord.y > 1 || texCoord.y < 0 ||
-			texCoord.z > 1 || texCoord.z < 0 
+			texCoord.x >= 1 || texCoord.x <= 0 ||
+			texCoord.y >= 1 || texCoord.y <= 0 ||
+			texCoord.z >= 1 || texCoord.z <= 0 
 			) {
 		return vec3(0);
 	}
 
 	float step = 1/128.;
 
+	float distPosX, distPosY, distPosZ;
+	float distNegX, distNegY, distNegZ;
 
-	float distPosX = texture(distanceField, texCoord + vec3(step, 0, 0)).x;
-	float distPosY = texture(distanceField, texCoord + vec3(0, step, 0)).x;
-	float distPosZ = texture(distanceField, texCoord + vec3(0, 0, step)).x;
+	switch(lod) {
+		case 0:
+			distPosX = texture(distanceFields[0], texCoord + vec3(step, 0, 0)).x;
+			distPosY = texture(distanceFields[0], texCoord + vec3(0, step, 0)).x;
+			distPosZ = texture(distanceFields[0], texCoord + vec3(0, 0, step)).x;
 
-	float distNegX = texture(distanceField, texCoord - vec3(step, 0, 0)).x;
-	float distNegY = texture(distanceField, texCoord - vec3(0, step, 0)).x;
-	float distNegZ = texture(distanceField, texCoord - vec3(0, 0, step)).x;
+			distNegX = texture(distanceFields[0], texCoord - vec3(step, 0, 0)).x;
+			distNegY = texture(distanceFields[0], texCoord - vec3(0, step, 0)).x;
+			distNegZ = texture(distanceFields[0], texCoord - vec3(0, 0, step)).x;
+			break;
+		case 1:
+			distPosX = texture(distanceFields[1], texCoord + vec3(step, 0, 0)).x;
+			distPosY = texture(distanceFields[1], texCoord + vec3(0, step, 0)).x;
+			distPosZ = texture(distanceFields[1], texCoord + vec3(0, 0, step)).x;
+
+			distNegX = texture(distanceFields[1], texCoord - vec3(step, 0, 0)).x;
+			distNegY = texture(distanceFields[1], texCoord - vec3(0, step, 0)).x;
+			distNegZ = texture(distanceFields[1], texCoord - vec3(0, 0, step)).x;
+			break;
+		case 2:
+			distPosX = texture(distanceFields[2], texCoord + vec3(step, 0, 0)).x;
+			distPosY = texture(distanceFields[2], texCoord + vec3(0, step, 0)).x;
+			distPosZ = texture(distanceFields[2], texCoord + vec3(0, 0, step)).x;
+
+			distNegX = texture(distanceFields[2], texCoord - vec3(step, 0, 0)).x;
+			distNegY = texture(distanceFields[2], texCoord - vec3(0, step, 0)).x;
+			distNegZ = texture(distanceFields[2], texCoord - vec3(0, 0, step)).x;
+			break;
+		case 3:
+			distPosX = texture(distanceFields[3], texCoord + vec3(step, 0, 0)).x;
+			distPosY = texture(distanceFields[3], texCoord + vec3(0, step, 0)).x;
+			distPosZ = texture(distanceFields[3], texCoord + vec3(0, 0, step)).x;
+
+			distNegX = texture(distanceFields[3], texCoord - vec3(step, 0, 0)).x;
+			distNegY = texture(distanceFields[3], texCoord - vec3(0, step, 0)).x;
+			distNegZ = texture(distanceFields[3], texCoord - vec3(0, 0, step)).x;
+			break;
+	}
 
 
 	//return getNormal(distPosX, dist, distPosY, dist, distPosZ, dist);
@@ -479,7 +542,8 @@ rayHitInfo march(camRay ray) {
 			break;
 		}*/
 
-		dist = min(0.5, dist);
+		//dist = min(0.1, dist);
+		//dist = max(0.001, dist);
 		ray.position += ray.direction * dist;
 	}
 
@@ -492,8 +556,8 @@ rayHitInfo march(camRay ray) {
 }
 
 void main() {
-	//FragColor = texture(distanceField, vec3(vec2((gl_FragCoord.xy / uResolution)), 0));
-	//FragColor = vec4(texture(distanceField, vec3(gl_FragCoord.xy / uResolution, 0)).x, 0, 0, 1);
+	//FragColor = texture(distanceFields[3], vec3(vec2((gl_FragCoord.xy / uResolution)), 0));
+	//FragColor = vec4(texture(distanceFields[3], vec3(gl_FragCoord.xy / uResolution, 0)).x, 0, 0, 1);
 	//return;
 	//FragColor = vec4(float(shapeCount)/10.0, 0.0, 0.0, 1.0);
 	//return;
@@ -536,7 +600,7 @@ void main() {
 
 	//float textureLength = 10.0;
 	//ivec3 texCoord = ivec3(((ray.position / textureLength) + 0.5) * 256.0);
-	//float dist =  imageLoad(distanceField, texCoord).x;
+	//float dist =  imageLoad(distanceFields[3], texCoord).x;
 	//FragColor = vec4(vec3(dist), 1.0);
 	//return;
 
@@ -553,7 +617,12 @@ void main() {
 		ray.direction =  lightDir;
 		ray.position += normal * 0.01;
 		rayHitInfo shadowInfo = march(ray);
+		//vec3 col = normal.xyz;
 		vec3 col = sceneCol(ray.position);
+	/*vec3 lodVec = abs(ray.position);
+	float x = max(max(lodVec.x, lodVec.y), lodVec.z);
+	int lod = int(max(floor(log2((x*2)/uTextureLength)), 0)); //int lod = max(int(ceil(log2(max(max(lodVec.x, lodVec.y), lodVec.z) + uTextureLength))), 0); int lod = 0;
+		vec3 col = vec3(float(lod)/10);*/
 		vec3 viewDir = normalize(uCamPosition - ray.position);
 
 		vec3 halfDir = normalize(viewDir + lightDir);

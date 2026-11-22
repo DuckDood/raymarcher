@@ -28,6 +28,6 @@ void main() {
 		if(any(lessThan(texCoord, start))) continue;
 		imageStore(cacheState, ivec3(gl_GlobalInvocationID), ivec4(0));
 	}
-	//imageStore(cacheState, ivec3(gl_GlobalInvocationID), ivec4(0));
+	imageStore(cacheState, ivec3(gl_GlobalInvocationID), ivec4(1));
 	return;
 }
