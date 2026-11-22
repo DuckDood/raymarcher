@@ -40,8 +40,14 @@ struct progstate {
 
 	GLuint uniform_buffers[2];
 
-	GLuint grid_texture;
-	GLuint cache_texture;
+	int lod_count;
+
+	GLuint grid_textures[8];
+
+
+	GLuint cache_textures[8];
+
+
 	GLuint grid_program;
 	GLuint cache_program;
 
@@ -252,38 +258,44 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 #define TEX_SIZE 256
 #define WORK_SIZE 4
 
-	glGenTextures(1, &st->grid_texture);
+	st->lod_count = 8;
+
+	glGenTextures(st->lod_count, st->grid_textures);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_3D, st->grid_texture);
+	for(int i = 0; i < st->lod_count; ++i) {
+		glBindTexture(GL_TEXTURE_3D, st->grid_textures[i]);
 
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-
-	glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, TEX_SIZE,TEX_SIZE,TEX_SIZE, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
-
-	glBindImageTexture(0, st->grid_texture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 
-	glGenTextures(1, &st->cache_texture);
+		glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, TEX_SIZE,TEX_SIZE,TEX_SIZE, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
+
+		glBindImageTexture(i*2, st->grid_textures[i], 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
+	}
+
+
+	glGenTextures(st->lod_count, st->cache_textures);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_3D, st->cache_texture);
+	for(int i = 0; i < st->lod_count; ++i) {
+		glBindTexture(GL_TEXTURE_3D, st->cache_textures[i]);
 
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 
-	glTexImage3D(GL_TEXTURE_3D, 0, GL_R8I, TEX_SIZE,TEX_SIZE,TEX_SIZE, 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, NULL);
+		glTexImage3D(GL_TEXTURE_3D, 0, GL_R8I, TEX_SIZE,TEX_SIZE,TEX_SIZE, 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, NULL);
 
-	glBindImageTexture(1, st->cache_texture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R8I);
+		glBindImageTexture(1 + 2*i, st->cache_textures[i], 0, GL_TRUE, 0, GL_READ_WRITE, GL_R8I);
+	}
 
 	glActiveTexture(GL_TEXTURE0);
 
@@ -587,7 +599,7 @@ struct renderOperation {
 	glBindVertexArray(st->screen_tri_vao);
 
 
-	glBindTexture(GL_TEXTURE_3D, st->grid_texture);
+	glBindTexture(GL_TEXTURE_3D, st->grid_textures[0]);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
 	SDL_GL_SwapWindow(st->window);
