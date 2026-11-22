@@ -202,7 +202,7 @@ vec2 smax( float a, float b, float k ) { // from https://iquilezles.org/articles
 
 uniform float uTextureLength;
 
-#define positionToTexCoord(x) vec3(((position / uTextureLength) + 0.5))
+#define positionToTexCoord(x) vec3(((x / uTextureLength) + 0.5))
 
 float distToSceneTex(vec3 position) {
 	vec3 texCoord = positionToTexCoord(position);//vec3(((position / textureLength) + 0.5));
