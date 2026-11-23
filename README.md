@@ -7,6 +7,10 @@
 
 Demo video [here](https://duckdood.github.io/terra/raymarcher_new), or try out an older demo version [here](https://duckdood.github.io/terra/raymarcher).
 
+
+## Downloading
+The [release page](https://github.com/DuckDood/raymarcher/releases/tag/v1.1) has linux binaries.
+
 ## Building locally (Tested with GCC on GNU/Linux)
 
 You need SDL3 headers.
