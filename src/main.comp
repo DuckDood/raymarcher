@@ -6,6 +6,9 @@ layout(rgba32f, binding=0) uniform image3D distanceFields[4];
 layout(r8i, binding=4) uniform iimage3D cacheState[4];
 uniform float uTextureLength;
 
+uniform int uLodsPerTex;
+uniform ivec3 uTexDimensions;
+
 struct shape {
 	mat4 inv_transformation;
 	vec4 params;
@@ -277,14 +280,15 @@ vec3 getNormalFromPos(vec3 position, float dist, float step) {
 void main() {
 
 
-	for(int i = 0; i < 8; i++) {
-	//	if(imageLoad(cacheState[i], ivec3(gl_GlobalInvocationID)).x != 0) continue;
-		vec3 position = (vec3((gl_GlobalInvocationID) / vec3(gl_NumWorkGroups * gl_WorkGroupSize)) - 0.5) * uTextureLength * pow(2, i);
-		vec3 color = vec3(0);
-		float distance;
-		distance = distToScene(position);
-		imageStore(distanceFields[i], ivec3(gl_GlobalInvocationID), vec4(distance));
-		imageStore(cacheState[i], ivec3(gl_GlobalInvocationID), ivec4(1));
+	for(int i = 0; i < 4; i++) {
+		for(int j = 0; j < uLodsPerTex; j++) {
+			//	if(imageLoad(cacheState[i], ivec3(gl_GlobalInvocationID)).x != 0) continue;
+			vec3 position = (vec3((gl_GlobalInvocationID) / vec3(gl_NumWorkGroups * gl_WorkGroupSize)) - 0.5) * uTextureLength * pow(2, i * uLodsPerTex + j);
+			float distance;
+			distance = distToScene(position);
+			imageStore(distanceFields[i], ivec3(gl_GlobalInvocationID) + ivec3(0, 0, uTexDimensions.z) * j, vec4(distance));
+			imageStore(cacheState[i], ivec3(gl_GlobalInvocationID) + ivec3(0, 0, uTexDimensions.z) * j, ivec4(1));
+		}
 	}
 	//vec3 color = sceneCol(position);
 

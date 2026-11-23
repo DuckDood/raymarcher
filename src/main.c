@@ -41,6 +41,7 @@ struct progstate {
 	GLuint uniform_buffers[2];
 
 	int lod_count;
+	int lods_per_tex;
 
 	GLuint grid_textures[8];
 
@@ -258,11 +259,12 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 #define TEX_SIZE 128
 #define WORK_SIZE 4
 
-	st->lod_count = 4;
+	st->lod_count = 8;
+	st->lods_per_tex = 2;
 
-	glGenTextures(st->lod_count, st->grid_textures);
+	glGenTextures(st->lod_count / st->lods_per_tex, st->grid_textures);
 	glActiveTexture(GL_TEXTURE0);
-	for(int i = 0; i < st->lod_count; ++i) {
+	for(int i = 0; i < st->lod_count / st->lods_per_tex; ++i) {
 		glBindTexture(GL_TEXTURE_3D, st->grid_textures[i]);
 
 		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -273,15 +275,15 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 
-		glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, TEX_SIZE,TEX_SIZE,TEX_SIZE, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
+		glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, TEX_SIZE,TEX_SIZE,TEX_SIZE * st->lods_per_tex, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
 
 		glBindImageTexture(i, st->grid_textures[i], 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
 	}
 
 
-	glGenTextures(st->lod_count, st->cache_textures);
+	glGenTextures(st->lod_count/st->lods_per_tex, st->cache_textures);
 	glActiveTexture(GL_TEXTURE1);
-	for(int i = 0; i < st->lod_count; ++i) {
+	for(int i = 0; i < st->lod_count / st->lods_per_tex; ++i) {
 		glBindTexture(GL_TEXTURE_3D, st->cache_textures[i]);
 
 		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -292,9 +294,9 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]]int argc, [[maybe_unu
 		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 
-		glTexImage3D(GL_TEXTURE_3D, 0, GL_R8I, TEX_SIZE,TEX_SIZE,TEX_SIZE, 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, NULL);
+		glTexImage3D(GL_TEXTURE_3D, 0, GL_R8I, TEX_SIZE,TEX_SIZE,TEX_SIZE * st->lods_per_tex, 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, NULL);
 
-		glBindImageTexture(st->lod_count + 2*i, st->cache_textures[i], 0, GL_TRUE, 0, GL_READ_WRITE, GL_R8I);
+		glBindImageTexture(st->lod_count/st->lods_per_tex + 2*i, st->cache_textures[i], 0, GL_TRUE, 0, GL_READ_WRITE, GL_R8I);
 	}
 
 	glActiveTexture(GL_TEXTURE0);
@@ -562,7 +564,7 @@ struct renderOperation {
 	// cache operations
 	glUseProgram(st->cache_program);
 
-	glUniform1f(glGetUniformLocation(st->cache_program, "uTextureLength"), 15);
+	glUniform1f(glGetUniformLocation(st->cache_program, "uTextureLength"), 5);
 	glUniform1f(glGetUniformLocation(st->cache_program, "uTextureSize"), TEX_SIZE);
 
 	glUniform1i(glGetUniformLocation(st->cache_program, "changeCount"), 2);
@@ -582,14 +584,20 @@ struct renderOperation {
 	// filling the grid
 	glUseProgram(st->grid_program);
 
-	glUniform1f(glGetUniformLocation(st->grid_program, "uTextureLength"), 15);
+	glUniform1f(glGetUniformLocation(st->grid_program, "uTextureLength"), 5);
+
+	glUniform1i(glGetUniformLocation(st->grid_program, "uLodsPerTex"), st->lods_per_tex);
+	glUniform3i(glGetUniformLocation(st->grid_program, "uTexDimensions"), TEX_SIZE, TEX_SIZE, TEX_SIZE);
 
 	glDispatchCompute(TEX_SIZE / WORK_SIZE, TEX_SIZE / WORK_SIZE, TEX_SIZE / WORK_SIZE);
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 	// drawing
 	glUseProgram(st->raymarch_prog);
-	glUniform1f(glGetUniformLocation(st->raymarch_prog, "uTextureLength"), 15);
+	glUniform1f(glGetUniformLocation(st->raymarch_prog, "uTextureLength"), 5);
+
+	glUniform1i(glGetUniformLocation(st->raymarch_prog, "uLodsPerTex"), st->lods_per_tex);
+	glUniform3i(glGetUniformLocation(st->raymarch_prog, "uTexDimensions"), TEX_SIZE, TEX_SIZE, TEX_SIZE);
 
 	glUniform1f(glGetUniformLocation(st->raymarch_prog, "uTime"), (float)time);
 	glUniform2f(glGetUniformLocation(st->raymarch_prog, "uResolution"), st->screen_width, st->screen_height);
@@ -599,7 +607,7 @@ struct renderOperation {
 	glBindVertexArray(st->screen_tri_vao);
 
 
-	for(int i = 0; i < st->lod_count; i++) {
+	for(int i = 0; i < st->lod_count/st->lods_per_tex; i++) {
 		glActiveTexture(GL_TEXTURE0 + i);
 		glBindTexture(GL_TEXTURE_3D, st->grid_textures[i]);
 	}
